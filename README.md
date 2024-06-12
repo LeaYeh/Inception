@@ -1,15 +1,17 @@
+# Config Your Docker In The Efficient Way
+
+# Table of Contents
+* Docker
+* Dpcker Composer
+* Docker Swarm
+* Docker Kubernetes
+
 # Docker
 
 ## What is a container
 
 1. Container is not a VM, it is a process that runs in an isolated environment.
 2. The process inside the container is isolated from the host machine and other containers. And it be limited to the resources(CPU, memory, storage) that it can use.
-
-### High level apporch
-It seems like a lighting VM
-
-
-### Low level apporch
 
 ## How the Docker works internally (background knowledge)
 
@@ -19,6 +21,12 @@ It seems like a lighting VM
 * Docker Client
 * Docker REST API
 * Docker CLI
+
+### Container runtimes concepts
+
+* Namespace
+* Control Groups
+* Union file systems
 
 ### Namespace
 
@@ -67,36 +75,19 @@ It seems like a lighting VM
 * Overlay Network
     * The container is connected to an overlay network, which means that the container can communicate with other containers that are connected to the same overlay network.
 
-## Container runtimes
-
-* Namespace
-* Control Groups
-* Union file systems
-
-## Docker Networking (Bridge Network)
-* Bridge Network
-* Host Network
-* None Network
-* Overlay Network
-* Macvlan Network
-* Network Plugin
-
 ## Docker Storage
-
-## Docker Volume
-
 
 
 ## Commands
 
-#### Entrypoint
+### Entrypoint
 Specifies the command that will be executed when the container starts. The `ENTRYPOINT` instruction can be overridden by passing a command to the `docker run` command.
 
 ```Dockerfile
 ENTRYPOINT ["executable", "param1", "param2"]
 ```
 
-#### Expose
+### Expose
 
 The container listens on the specified network ports at runtime. The `EXPOSE` instruction does not actually publish the port. It functions as a type of documentation between the person who builds the image and the person who runs the container, about which ports are intended to be published.
 
@@ -104,7 +95,7 @@ The container listens on the specified network ports at runtime. The `EXPOSE` in
 EXPOSE <port>
 ```
 
-#### CMD
+### CMD
 
 `CMD` is used to provide default arguments for the `ENTRYPOINT` instruction.
 If no `ENTRYPOINT` is specified, the `CMD` instruction will be the command that is run when the container starts.
@@ -113,6 +104,31 @@ If no `ENTRYPOINT` is specified, the `CMD` instruction will be the command that 
 CMD ["executable","param1","param2"]
 ```
 
+### Dockerfile `ENTRYPOINT` vs Docker-Composer `command`
+
+* We can config the `ENTRYPOINT` in the Dockerfile and the `command` in the Docker-Composer for the further configuration.
+* It can make the Dockerfile more reusable and **flexible**.
+
+```Dockerfile
+# Dockerfile
+# ...
+ENTRYPOINT ["ngrok"]
+```
+
+```yaml
+# docker-compose.yml
+services:
+  my-service:
+    command: ["start", "--all", "--config", "/etc/ngrok.yml"]
+# ...
+```
+
+* In this example, the `ENTRYPOINT` is set to `ngrok` in the Dockerfile, and the `command` is set for the start command in the Docker-Compose file.
+
+* Conclusion
+    * `ENTRYPOINT` is used to define the default executable for the container and it is fixed.
+    * `command` is used to provide additional arguments to the `ENTRYPOINT` instruction and it is flexible.
+    * **When we need to change the parameters we don't need to rebuild the image.**
 
 ### Image
 ### Container
@@ -358,6 +374,22 @@ services:
     * A named volume shared-data is defined and shared between web and db services.
     * This configuration allows both services to read from and write to the same volume, facilitating data sharing.
 
+## Exception handling
+
+* The `restart` key is used to specify the restart policy for the service.
+  * The `no` option specifies that the container should not be restarted if it stops.
+    * Suitable for services that are not critical and not required to be running all the time.
+  * The `always` option specifies that the container should always be restarted if it stops.
+    * Suitable for critical services that need to be running all the time.
+  * The `on-failure` option specifies that the container should be restarted if it stops with a non-zero exit code.
+  * The `unless-stopped` option specifies that the container should always be restarted unless it is explicitly stopped by the user.
+    * Suitable for services that need to be running all the time but can be stopped by the user.
+
+```yaml
+services:
+  my-service:
+    restart: [always|no|on-failure|unless-stopped]
+```
 
 # Docker Swarm
 * Docker Swarm is a tool that is used to create and manage a cluster of Docker nodes.
