@@ -1,0 +1,51 @@
+version: '3.9'
+services:
+  db:
+    build:
+      context: ./srcs/mariadb
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./srcs/mariadb:/var/lib/mariadb
+    networks:
+      db_wordpress:
+        aliases:
+          - d2w
+        driver: bridge
+
+  wordpress:
+    build:
+      context: ./srcs/wordpress
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "9000:9000"
+    depends_on:
+      - [db, nginx]
+    volumes:
+      - shared-wp:/usr/share/wordpress
+    networks:
+      db_wordpress:
+        aliases:
+          - d2w
+        driver: bridge
+
+  nginx:
+    build:
+      context: ./srcs/nginx
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "9000:9000"
+      - "443:443"
+    depends_on:
+      - wordpress
+    volumes:
+      - shared-wp:/usr/share/wordpress
+    networks:
+      nginx_wordpress:
+        aliases:
+          - n2w
+        driver: bridge
