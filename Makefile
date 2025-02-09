@@ -61,8 +61,6 @@ re: clean run
 fclean: clean
 	@echo "$(RED)Removing all project images...$(RESET)"
 	@docker rmi -f $(shell docker images "inception/*" -q) || true
-	@rm -f $(SRC_DIR)/.env || true
-	@rm -f $(SRC_DIR)/docker-compose.override.yml || true
 
 logs:
 	@echo "$(CYAN)Showing logs...$(RESET)"
