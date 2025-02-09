@@ -1,0 +1,5 @@
+networks:
+  nginx_wordpress:
+    driver: bridge
+  db_wordpress:
+    driver: bridge

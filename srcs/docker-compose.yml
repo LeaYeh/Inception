@@ -1,51 +1,59 @@
-version: '3.9'
+# docker-compose.yml
+version: '3.8'
 services:
+  base:
+    build:
+      args:
+        - OS=${OS}
+        - OS_VERSION=${OS_VERSION}
+      context: .
+      dockerfile: requirements/base/Dockerfile
+    image: inception/base:latest
+  
   db:
     build:
-      context: ./srcs/mariadb
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: requirements/mariadb/Dockerfile
     restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
-      - ./srcs/mariadb:/var/lib/mariadb
+      - ${VOLUME_DB}:/var/lib/mariadb
     networks:
-      db_wordpress:
-        aliases:
-          - d2w
-        driver: bridge
+      - ${NETWORK_DB}
+      - ${NETWORK_CWP_CDB}
 
   wordpress:
     build:
-      context: ./srcs/wordpress
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: requirements/wordpress/Dockerfile
     restart: always
     ports:
-      - "9000:9000"
+      - "9001:9000"
     depends_on:
-      - [db, nginx]
+      - nginx
     volumes:
-      - shared-wp:/usr/share/wordpress
+      - ${VOLUME_WP}:/usr/share/wordpress
     networks:
-      db_wordpress:
-        aliases:
-          - d2w
-        driver: bridge
+      - ${NETWORK_WP}
 
   nginx:
     build:
-      context: ./srcs/nginx
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: requirements/nginx/Dockerfile
+    image: inception/nginx:latest
     restart: always
     ports:
-      - "9000:9000"
       - "443:443"
+      - "9000:9000"
     depends_on:
-      - wordpress
+      - base
     volumes:
-      - shared-wp:/usr/share/wordpress
+      - ${VOLUME_WP}:/usr/share/wordpress
     networks:
-      nginx_wordpress:
-        aliases:
-          - n2w
-        driver: bridge
+      - ${NETWORK_CNGINX_CWP}
+      - ${NETWORK_CNGINX_WP}
