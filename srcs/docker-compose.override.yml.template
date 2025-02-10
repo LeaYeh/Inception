@@ -1,14 +1,5 @@
-version: '3.8'
 networks:
-  NETWORK_CNGINX_CWP_PLACEHOLDER:
-    external: true
-  NETWORK_CNGINX_WP_PLACEHOLDER:
-    external: true
-  NETWORK_CWP_CDB_PLACEHOLDER:
-    external: true
-  NETWORK_WP_PLACEHOLDER:
-    external: true
-  NETWORK_DB_PLACEHOLDER:
+  NETWORK_PLACEHOLDER:
     external: true
 volumes:
   VOLUME_WP_PLACEHOLDER:

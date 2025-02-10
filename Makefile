@@ -8,17 +8,13 @@ WHITE  := $(shell tput -Txterm setaf 7)
 RESET  := $(shell tput -Txterm sgr0)
 
 SRC_DIR = ./srcs
-DC = docker-compose -f $(SRC_DIR)/docker-compose.yml -f $(SRC_DIR)/docker-compose.override.yml
+DC = docker compose -f $(SRC_DIR)/docker-compose.yml -f $(SRC_DIR)/docker-compose.override.yml
 APP_VERSION = 0.0.1
 OS = alpine
 OS_VERSION = 3.19
 VOLUME_WP = wp-files
 VOLUME_DB = db-data
-NETWORK_CNGINX_CWP = network-cnginx-cwp
-NETWORK_CNGINX_WP = network-cnginx-wp
-NETWORK_CWP_CDB = network-cwp-cdb
-NETWORK_WP = network-wp
-NETWORK_DB = network-db
+NETWORK = inception-network
 
 SERVICES := nginx db wordpress
 
@@ -26,14 +22,14 @@ default: run
 
 build-base: check-create-volume check-create-network init-env generate-override
 	@echo "$(BLUE)Building base image...$(RESET)"
-	@DOCKER_BUILDKIT=0 $(DC) build base --no-cache
+	@$(DC) build base --no-cache
 	@echo "$(BLUE)Checking base image...$(RESET)"
 	@docker image inspect inception/base:$(APP_VERSION) > /dev/null 2>&1 || (echo "$(RED)Base image not found$(RESET)" && exit 1)
 	@echo "$(GREEN)Base image has been built: inception/base:$(APP_VERSION)$(RESET)"
 
 build: build-base
 	@echo "$(BLUE)Building other images...$(RESET)"
-	@DOCKER_BUILDKIT=0 $(DC) --verbose build $(SERVICES) --no-cache --parallel || true
+	@$(DC) --verbose build $(SERVICES) --no-cache --parallel || true
 	@if [ "$$(docker images -q inception/nginx:$(APP_VERSION))" = "" ] || \
 		[ "$$(docker images -q inception/wordpress:$(APP_VERSION))" = "" ] || \
 		[ "$$(docker images -q inception/mariadb:$(APP_VERSION))" = "" ]; then \
@@ -74,11 +70,7 @@ clean:
 	@echo "$(YELLOW)Removing volumes and networks...$(RESET)"
 	@docker volume rm $(VOLUME_WP) || true
 	@docker volume rm $(VOLUME_DB) || true
-	@docker network rm $(NETWORK_CNGINX_CWP) || true
-	@docker network rm $(NETWORK_CNGINX_WP) || true
-	@docker network rm $(NETWORK_CWP_CDB) || true
-	@docker network rm $(NETWORK_WP) || true
-	@docker network rm $(NETWORK_DB) || true
+	@docker network rm $(NETWORK) || true
 
 re: clean run
 
@@ -123,7 +115,7 @@ check-create-volume:
 
 check-create-network:
 	@echo "$(BLUE)Checking and creating networks...$(RESET)"
-	@for net in $(NETWORK_CNGINX_CWP) $(NETWORK_CNGINX_WP) $(NETWORK_CWP_CDB) $(NETWORK_WP) $(NETWORK_DB); do \
+	@for net in $(NETWORK); do \
 		if [ -z "$$(docker network ls -q -f name=$$net)" ]; then \
 			echo "$(YELLOW)Docker network $$net does not exist. Creating...$(RESET)"; \
 			docker network create $$net; \
@@ -154,21 +146,13 @@ init-env:
 	@echo "\n# Docker-compose setup" >> $(SRC_DIR)/.env
 	@echo "VOLUME_WP=$(VOLUME_WP)" >> $(SRC_DIR)/.env
 	@echo "VOLUME_DB=$(VOLUME_DB)" >> $(SRC_DIR)/.env
-	@echo "NETWORK_CNGINX_CWP=$(NETWORK_CNGINX_CWP)" >> $(SRC_DIR)/.env
-	@echo "NETWORK_CNGINX_WP=$(NETWORK_CNGINX_WP)" >> $(SRC_DIR)/.env
-	@echo "NETWORK_CWP_CDB=$(NETWORK_CWP_CDB)" >> $(SRC_DIR)/.env
-	@echo "NETWORK_WP=$(NETWORK_WP)" >> $(SRC_DIR)/.env
-	@echo "NETWORK_DB=$(NETWORK_DB)" >> $(SRC_DIR)/.env
+	@echo "NETWORK=$(NETWORK)" >> $(SRC_DIR)/.env
 
 generate-override:
 	@echo "$(BLUE)Generating docker-compose.override.yml...$(RESET)"
-	@sed 's/NETWORK_CNGINX_CWP_PLACEHOLDER/$(NETWORK_CNGINX_CWP)/g; \
-		s/NETWORK_CNGINX_WP_PLACEHOLDER/$(NETWORK_CNGINX_WP)/g; \
-		s/NETWORK_CWP_CDB_PLACEHOLDER/$(NETWORK_CWP_CDB)/g; \
-		s/NETWORK_WP_PLACEHOLDER/$(NETWORK_WP)/g; \
-		s/NETWORK_DB_PLACEHOLDER/$(NETWORK_DB)/g; \
-		s/VOLUME_WP_PLACEHOLDER/$(VOLUME_WP)/g; \
-		s/VOLUME_DB_PLACEHOLDER/$(VOLUME_DB)/g' \
+	@sed -e 's#NETWORK_PLACEHOLDER#$(NETWORK)#g' \
+		-e 's#VOLUME_WP_PLACEHOLDER#$(VOLUME_WP)#g' \
+		-e 's#VOLUME_DB_PLACEHOLDER#$(VOLUME_DB)#g' \
 		$(SRC_DIR)/docker-compose.override.yml.template > $(SRC_DIR)/docker-compose.override.yml
 	@echo "$(GREEN)docker-compose.override.yml has been generated.$(RESET)"
 

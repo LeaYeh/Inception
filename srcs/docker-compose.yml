@@ -1,5 +1,4 @@
 # docker-compose.yml
-version: '3.8'
 services:
   base:
     build:
@@ -9,7 +8,7 @@ services:
       context: ./requirements/base
       dockerfile: Dockerfile
     image: inception/base:${APP_VERSION}
-  
+
   db:
     build:
       args:
@@ -18,13 +17,10 @@ services:
       dockerfile: Dockerfile
     image: inception/mariadb:${APP_VERSION}
     restart: always
-    ports:
-      - "3306:3306"
     volumes:
       - ${VOLUME_DB}:/var/lib/mariadb
     networks:
-      - ${NETWORK_DB}
-      - ${NETWORK_CWP_CDB}
+      - ${NETWORK}
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
@@ -41,14 +37,12 @@ services:
       dockerfile: Dockerfile
     image: inception/wordpress:${APP_VERSION}
     restart: always
-    ports:
-      - "9001:9000"
     depends_on:
       - db
     volumes:
       - ${VOLUME_WP}:/usr/share/wordpress
     networks:
-      - ${NETWORK_WP}
+      - ${NETWORK}
     environment:
       - WP_ADMIN_USER=${MYSQL_ADMIN}
       - WP_ADMIN_PASSWORD=${MYSQL_ADMIN_PASSWORD}
@@ -68,11 +62,11 @@ services:
     restart: always
     ports:
       - "443:443"
-      - "9000:9000"
     depends_on:
       - wordpress
     volumes:
       - ${VOLUME_WP}:/usr/share/wordpress
     networks:
-      - ${NETWORK_CNGINX_CWP}
-      - ${NETWORK_CNGINX_WP}
+      - ${NETWORK}
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME}
