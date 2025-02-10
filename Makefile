@@ -7,8 +7,13 @@ CYAN   := $(shell tput -Txterm setaf 6)
 WHITE  := $(shell tput -Txterm setaf 7)
 RESET  := $(shell tput -Txterm sgr0)
 
+USER_NAME = $(shell whoami)
+
 DIR_SRCS = ./srcs
 DIR_HOME = /home/$(USER_NAME)
+DIR_DATA = $(DIR_HOME)/data
+DIR_DATA_WP = $(DIR_DATA)/wordpress
+DIR_DATA_DB = $(DIR_DATA)/mariadb
 
 DC = docker compose -f $(DIR_SRCS)/docker-compose.yml -f $(DIR_SRCS)/docker-compose.override.yml
 APP_VERSION = 0.0.1
