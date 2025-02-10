@@ -1,4 +1,5 @@
-ARG     BASE_IMAGE=inception/base:latest
+# srcs/requirements/wordpress/Dockerfile
+ARG     BASE_IMAGE
 FROM    ${BASE_IMAGE}
 
 RUN     set -x \
@@ -17,6 +18,13 @@ RUN     curl -o wordpress.tar.gz https://wordpress.org/latest.tar.gz && \
             ls -la && \
             mv wordpress /var/www/html/wordpress
 
-RUN chown -R www-data:www-data /var/www/html/wordpress
+RUN     chown -R www-data:www-data /var/www/html/wordpress
 
-CMD ["php-fpm7", "-F"]
+COPY    conf/wp-config.php /var/www/html/wordpress/wp-config.php
+
+COPY    tools/wp-init.sh /usr/local/bin/wp-init.sh
+RUN     chmod +x /usr/local/bin/wp-init.sh
+
+USER    www-data
+
+CMD     ["wp-init.sh"]
