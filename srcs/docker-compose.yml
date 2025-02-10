@@ -44,7 +44,7 @@ services:
     ports:
       - "9001:9000"
     depends_on:
-      - nginx
+      - db
     volumes:
       - ${VOLUME_WP}:/usr/share/wordpress
     networks:
@@ -70,7 +70,7 @@ services:
       - "443:443"
       - "9000:9000"
     depends_on:
-      - base
+      - wordpress
     volumes:
       - ${VOLUME_WP}:/usr/share/wordpress
     networks:
