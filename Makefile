@@ -45,21 +45,21 @@ run: build
 	@sleep 10
 	@echo "$(YELLOW)Checking service status...$(RESET)"
 	@for service in $(SERVICES); do \
-		if docker-compose -f $(SRC_DIR)/docker-compose.yml -f $(SRC_DIR)/docker-compose.override.yml ps --services --filter "status=running" | grep -q $$service; then \
+		if $(DC) ps --services --filter "status=running" | grep -q $$service; then \
 			echo "$(GREEN)$$service is running.$(RESET)"; \
 		else \
 			echo "$(RED)$$service is not running.$(RESET)"; \
-			docker-compose -f $(SRC_DIR)/docker-compose.yml -f $(SRC_DIR)/docker-compose.override.yml logs $$service; \
+			$(DC) logs $$service; \
 			exit 1; \
 		fi; \
 	done
 	@echo "$(GREEN)All services are running.$(RESET)"
 	@echo "$(YELLOW)Checking network connectivity...$(RESET)"
-	@if docker exec $$(docker-compose -f $(SRC_DIR)/docker-compose.yml -f $(SRC_DIR)/docker-compose.override.yml ps -q wordpress) ping -c 2 db > /dev/null 2>&1; then \
+	@if docker exec $$($(DC) ps -q wordpress) ping -c 2 db > /dev/null 2>&1; then \
 		echo "$(GREEN)WordPress can connect to the database.$(RESET)"; \
 	else \
 		echo "$(RED)WordPress cannot connect to the database.$(RESET)"; \
-		docker exec $$(docker-compose -f $(SRC_DIR)/docker-compose.yml -f $(SRC_DIR)/docker-compose.override.yml ps -q wordpress) ping -c 2 db; \
+		docker exec $$($(DC) ps -q wordpress) ping -c 2 db; \
 		exit 1; \
 	fi
 	@echo "$(GREEN)Setup completed successfully.$(RESET)"
@@ -86,11 +86,11 @@ re-service: build-base
 	@$(DC) up -d $(SERVICE)
 	@echo "$(GREEN)Service $(SERVICE) has been rebuilt and restarted.$(RESET)"
 	@echo "$(YELLOW)Checking service status...$(RESET)"
-	@if docker-compose -f $(SRC_DIR)/docker-compose.yml -f $(SRC_DIR)/docker-compose.override.yml ps --services --filter "status=running" | grep -q $(SERVICE); then \
+	@if $(DC) ps --services --filter "status=running" | grep -q $(SERVICE); then \
 		echo "$(GREEN)$(SERVICE) is running.$(RESET)"; \
 	else \
 		echo "$(RED)$(SERVICE) is not running.$(RESET)"; \
-		docker-compose -f $(SRC_DIR)/docker-compose.yml -f $(SRC_DIR)/docker-compose.override.yml logs $(SERVICE); \
+		$(DC) logs $(SERVICE); \
 		exit 1; \
 	fi
 
