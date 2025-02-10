@@ -7,8 +7,10 @@ CYAN   := $(shell tput -Txterm setaf 6)
 WHITE  := $(shell tput -Txterm setaf 7)
 RESET  := $(shell tput -Txterm sgr0)
 
-SRC_DIR = ./srcs
-DC = docker compose -f $(SRC_DIR)/docker-compose.yml -f $(SRC_DIR)/docker-compose.override.yml
+DIR_SRCS = ./srcs
+DIR_HOME = /home/$(USER_NAME)
+
+DC = docker compose -f $(DIR_SRCS)/docker-compose.yml -f $(DIR_SRCS)/docker-compose.override.yml
 APP_VERSION = 0.0.1
 OS = alpine
 OS_VERSION = 3.19
@@ -20,6 +22,7 @@ SERVICES := nginx db wordpress
 
 default: run
 
+.PHONY: build-base
 build-base: check-create-volume check-create-network init-env generate-override
 	@echo "$(BLUE)Building base image...$(RESET)"
 	@$(DC) build base --no-cache
@@ -27,6 +30,7 @@ build-base: check-create-volume check-create-network init-env generate-override
 	@docker image inspect inception/base:$(APP_VERSION) > /dev/null 2>&1 || (echo "$(RED)Base image not found$(RESET)" && exit 1)
 	@echo "$(GREEN)Base image has been built: inception/base:$(APP_VERSION)$(RESET)"
 
+.PHONY: build
 build: build-base
 	@echo "$(BLUE)Building other images...$(RESET)"
 	@$(DC) --verbose build $(SERVICES) --no-cache --parallel || true
@@ -38,6 +42,7 @@ build: build-base
 	fi
 	@echo "$(GREEN)Other images have been built.$(RESET)"
 
+.PHONY: run
 run: build
 	@echo "$(GREEN)Starting services...$(RESET)"
 	@$(DC) up -d
@@ -64,6 +69,7 @@ run: build
 	fi
 	@echo "$(GREEN)Setup completed successfully.$(RESET)"
 
+.PHONY: clean
 clean:
 	@echo "$(YELLOW)Stopping and removing containers...$(RESET)"
 	@$(DC) down
@@ -72,8 +78,10 @@ clean:
 	@docker volume rm $(VOLUME_DB) || true
 	@docker network rm $(NETWORK) || true
 
+.PHONY: re
 re: clean run
 
+.PHONY: re-service
 re-service: build-base
 	@if [ -z "$(SERVICE)" ]; then \
 		echo "$(RED)Error: SERVICE is not specified. Usage: make re-service SERVICE=<service_name>$(RESET)"; \
@@ -94,14 +102,17 @@ re-service: build-base
 		exit 1; \
 	fi
 
+.PHONY: fclean
 fclean: clean
 	@echo "$(RED)Removing all project images...$(RESET)"
 	@docker rmi -f $(shell docker images "inception/*" -q) || true
 
+.PHONY: logs
 logs:
 	@echo "$(CYAN)Showing logs...$(RESET)"
 	@$(DC) logs -f
 
+.PHONY: check-create-volume
 check-create-volume:
 	@echo "$(BLUE)Checking and creating volumes...$(RESET)"
 	@for vol in $(VOLUME_WP) $(VOLUME_DB); do \
@@ -113,6 +124,7 @@ check-create-volume:
 		fi; \
 	done
 
+.PHONY: check-create-network
 check-create-network:
 	@echo "$(BLUE)Checking and creating networks...$(RESET)"
 	@for net in $(NETWORK); do \
@@ -124,38 +136,41 @@ check-create-network:
 		fi; \
 	done
 
+.PHONY: init-env
 init-env:
 	@echo "$(BLUE)Initializing environment variables...$(RESET)"
 	$(eval USER_NAME=$(shell whoami))
 	@echo "Creating .env file..."
-	@echo "# $(SRC_DIR)/.env" > $(SRC_DIR)/.env
-	@echo "# Basic setup" >> $(SRC_DIR)/.env
-	@echo "OS=$(OS)" >> $(SRC_DIR)/.env
-	@echo "OS_VERSION=$(OS_VERSION)" >> $(SRC_DIR)/.env
-	@echo "APP_VERSION=$(APP_VERSION)" >> $(SRC_DIR)/.env
-	@echo "DOMAIN_NAME=$(USER_NAME).42.fr" >> $(SRC_DIR)/.env
-	@echo "\n# DB setup" >> $(SRC_DIR)/.env
-	@echo "MYSQL_ROOT_PASSWORD=$(shell openssl rand -base64 12)" >> $(SRC_DIR)/.env
-	@echo "MYSQL_ADMIN=$(USER_NAME)" >> $(SRC_DIR)/.env
-	@echo "MYSQL_ADMIN_PASSWORD=$(shell openssl rand -base64 12)" >> $(SRC_DIR)/.env
-	@echo "MYSQL_ADMIN_EMAIL=$(USER_NAME)@42.fr" >> $(SRC_DIR)/.env
-	@echo "MYSQL_DATABASE=wordpress" >> $(SRC_DIR)/.env
-	@echo "MYSQL_USER=wordpress" >> $(SRC_DIR)/.env
-	@echo "MYSQL_USER_PASSWORD=$(shell openssl rand -base64 12)" >> $(SRC_DIR)/.env
-	@echo "MYSQL_USER_EMAIL=wordpress@42.fr" >> $(SRC_DIR)/.env
-	@echo "\n# Docker-compose setup" >> $(SRC_DIR)/.env
-	@echo "VOLUME_WP=$(VOLUME_WP)" >> $(SRC_DIR)/.env
-	@echo "VOLUME_DB=$(VOLUME_DB)" >> $(SRC_DIR)/.env
-	@echo "NETWORK=$(NETWORK)" >> $(SRC_DIR)/.env
+	@echo "# $(DIR_SRCS)/.env" > $(DIR_SRCS)/.env
+	@echo "# Basic setup" >> $(DIR_SRCS)/.env
+	@echo "OS=$(OS)" >> $(DIR_SRCS)/.env
+	@echo "OS_VERSION=$(OS_VERSION)" >> $(DIR_SRCS)/.env
+	@echo "APP_VERSION=$(APP_VERSION)" >> $(DIR_SRCS)/.env
+	@echo "DOMAIN_NAME=$(USER_NAME).42.fr" >> $(DIR_SRCS)/.env
+	@echo "\n# DB setup" >> $(DIR_SRCS)/.env
+	@echo "MYSQL_ROOT_PASSWORD=$(shell openssl rand -base64 12)" >> $(DIR_SRCS)/.env
+	@echo "MYSQL_ADMIN=$(USER_NAME)" >> $(DIR_SRCS)/.env
+	@echo "MYSQL_ADMIN_PASSWORD=$(shell openssl rand -base64 12)" >> $(DIR_SRCS)/.env
+	@echo "MYSQL_ADMIN_EMAIL=$(USER_NAME)@42.fr" >> $(DIR_SRCS)/.env
+	@echo "MYSQL_DATABASE=wordpress" >> $(DIR_SRCS)/.env
+	@echo "MYSQL_USER=wordpress" >> $(DIR_SRCS)/.env
+	@echo "MYSQL_USER_PASSWORD=$(shell openssl rand -base64 12)" >> $(DIR_SRCS)/.env
+	@echo "MYSQL_USER_EMAIL=wordpress@42.fr" >> $(DIR_SRCS)/.env
+	@echo "\n# Docker-compose setup" >> $(DIR_SRCS)/.env
+	@echo "VOLUME_WP=$(VOLUME_WP)" >> $(DIR_SRCS)/.env
+	@echo "VOLUME_DB=$(VOLUME_DB)" >> $(DIR_SRCS)/.env
+	@echo "NETWORK=$(NETWORK)" >> $(DIR_SRCS)/.env
 
+.PHONY: generate-override
 generate-override:
 	@echo "$(BLUE)Generating docker-compose.override.yml...$(RESET)"
 	@sed -e 's#NETWORK_PLACEHOLDER#$(NETWORK)#g' \
 		-e 's#VOLUME_WP_PLACEHOLDER#$(VOLUME_WP)#g' \
 		-e 's#VOLUME_DB_PLACEHOLDER#$(VOLUME_DB)#g' \
-		$(SRC_DIR)/docker-compose.override.yml.template > $(SRC_DIR)/docker-compose.override.yml
+		$(DIR_SRCS)/docker-compose.override.yml.template > $(DIR_SRCS)/docker-compose.override.yml
 	@echo "$(GREEN)docker-compose.override.yml has been generated.$(RESET)"
 
+.PHONY: help
 help:
 	@echo "$(CYAN)Available targets:$(RESET)"
 	@echo "  $(YELLOW)build$(RESET)        - Build Docker images"
@@ -165,5 +180,3 @@ help:
 	@echo "  $(YELLOW)re-service$(RESET)   - Rebuild and restart a specific service. Usage: make re-service SERVICE=<service_name>"
 	@echo "  $(YELLOW)fclean$(RESET)       - Perform clean and remove all project images"
 	@echo "  $(YELLOW)logs$(RESET)         - Show service logs"
-
-.PHONY: default build run clean re re-service fclean logs check-create-volume check-create-network init-env generate-override help
