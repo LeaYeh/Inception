@@ -56,6 +56,7 @@ services:
     build:
       args:
         - BASE_IMAGE=inception/base:${APP_VERSION}
+        - DOMAIN_NAME="${DOMAIN_NAME}"
       context: ./requirements/nginx
       dockerfile: Dockerfile
     image: inception/nginx:${APP_VERSION}

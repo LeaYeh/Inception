@@ -1,3 +1,4 @@
+# srcs/requirements/mariadb/Dockerfile
 ARG     BASE_IMAGE
 FROM    ${BASE_IMAGE}
 
@@ -16,6 +17,4 @@ WORKDIR /var/lib/mysql
 
 EXPOSE  3306
 
-USER    mysql
-
-CMD     ["sh", "-c", "/local/bin/init-db.sh && mysqld"]
+CMD     ["sh", "-c", "/local/bin/init-db.sh && exec mysqld --user=mysql"]

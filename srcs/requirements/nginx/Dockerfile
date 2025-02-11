@@ -2,6 +2,8 @@
 ARG     BASE_IMAGE
 FROM    ${BASE_IMAGE}
 
+ARG     DOMAIN_NAME
+
 RUN     apk add --no-cache nginx openssl
 RUN     mkdir -p /run/nginx
 RUN     mkdir -p /etc/nginx/ssl
