@@ -1,4 +1,4 @@
-RED	:= $(shell tput -Txterm setaf 1)
+RED    := $(shell tput -Txterm setaf 1)
 GREEN  := $(shell tput -Txterm setaf 2)
 YELLOW := $(shell tput -Txterm setaf 3)
 BLUE   := $(shell tput -Txterm setaf 4)
@@ -7,45 +7,22 @@ CYAN   := $(shell tput -Txterm setaf 6)
 WHITE  := $(shell tput -Txterm setaf 7)
 RESET  := $(shell tput -Txterm sgr0)
 
-USER_NAME = $(shell whoami)
-
-DIR_SRCS = ./srcs
-DIR_HOME = /home/$(USER_NAME)
-DIR_DATA = $(DIR_HOME)/data
-DIR_DATA_WP = $(DIR_DATA)/wordpress
-DIR_DATA_DB = $(DIR_DATA)/mariadb
-
-DC = docker compose -f $(DIR_SRCS)/docker-compose.yml -f $(DIR_SRCS)/docker-compose.override.yml
-APP_VERSION = 0.0.1
-OS = alpine
-OS_VERSION = 3.19
-VOLUME_WP = wp-files
-VOLUME_DB = db-data
-NETWORK = inception-network
-
-SERVICES := nginx db wordpress
+USER_NAME		= $(shell whoami)
+DIR_SRCS 		= ./srcs
+DIR_HOME 		= /home/$(USER_NAME)
+DIR_DATA 		= $(DIR_HOME)/data
+DIR_DATA_WP 	= $(DIR_DATA)/wordpress
+DIR_DATA_DB 	= $(DIR_DATA)/mariadb
+DC 				= DOCKER_BUILDKIT=0 docker compose -f $(DIR_SRCS)/docker-compose.yml -f $(DIR_SRCS)/docker-compose.override.yml
+APP_VERSION 	= 0.0.1
+OS 				= alpine
+OS_VERSION 		= 3.19
+VOLUME_WP 		= wp-files
+VOLUME_DB 		= db-data
+NETWORK 		= inception-network
+SERVICES 		:= nginx db wordpress
 
 default: run
-
-.PHONY: build-base
-build-base: check-create-volume check-create-network init-env generate-override
-	@echo "$(BLUE)Building base image...$(RESET)"
-	@$(DC) build base --no-cache
-	@echo "$(BLUE)Checking base image...$(RESET)"
-	@docker image inspect inception/base:$(APP_VERSION) > /dev/null 2>&1 || (echo "$(RED)Base image not found$(RESET)" && exit 1)
-	@echo "$(GREEN)Base image has been built: inception/base:$(APP_VERSION)$(RESET)"
-
-.PHONY: build
-build: build-base
-	@echo "$(BLUE)Building other images...$(RESET)"
-	@$(DC) --verbose build $(SERVICES) --no-cache --parallel || true
-	@if [ "$$(docker images -q inception/nginx:$(APP_VERSION))" = "" ] || \
-		[ "$$(docker images -q inception/wordpress:$(APP_VERSION))" = "" ] || \
-		[ "$$(docker images -q inception/mariadb:$(APP_VERSION))" = "" ]; then \
-		echo "$(RED)Error: Failed to build other images$(RESET)"; \
-		exit 1; \
-	fi
-	@echo "$(GREEN)Other images have been built.$(RESET)"
 
 .PHONY: run
 run: build
@@ -74,20 +51,24 @@ run: build
 	fi
 	@echo "$(GREEN)Setup completed successfully.$(RESET)"
 
-.PHONY: clean
-clean:
-	@echo "$(YELLOW)Stopping and removing containers...$(RESET)"
-	@$(DC) down
-	@echo "$(YELLOW)Removing volumes and networks...$(RESET)"
-	@docker volume rm $(VOLUME_WP) || true
-	@docker volume rm $(VOLUME_DB) || true
-	@docker network rm $(NETWORK) || true
+.PHONY: build
+build: .build-base
+	@echo "$(BLUE)Checking other images...$(RESET)"
+	@for service in $(SERVICES); do \
+		if docker image inspect inception/$$service:$(APP_VERSION) > /dev/null 2>&1; then \
+			echo "$(GREEN)Image for $$service already exists.$(RESET)"; \
+		else \
+			echo "$(BLUE)Building image for $$service...$(RESET)"; \
+			$(DC) build $$service --no-cache; \
+		fi; \
+	done
+	@echo "$(GREEN)All necessary images are ready.$(RESET)"
 
 .PHONY: re
 re: clean run
 
 .PHONY: re-service
-re-service: build-base
+re-service: .build-base
 	@if [ -z "$(SERVICE)" ]; then \
 		echo "$(RED)Error: SERVICE is not specified. Usage: make re-service SERVICE=<service_name>$(RESET)"; \
 		exit 1; \
@@ -107,6 +88,15 @@ re-service: build-base
 		exit 1; \
 	fi
 
+.PHONY: clean
+clean:
+	@echo "$(YELLOW)Stopping and removing containers...$(RESET)"
+	@$(DC) down
+	@echo "$(YELLOW)Removing volumes and networks...$(RESET)"
+	@docker volume rm $(VOLUME_WP) || true
+	@docker volume rm $(VOLUME_DB) || true
+	@docker network rm $(NETWORK) || true
+
 .PHONY: fclean
 fclean: clean
 	@echo "$(RED)Removing all project images...$(RESET)"
@@ -117,8 +107,19 @@ logs:
 	@echo "$(CYAN)Showing logs...$(RESET)"
 	@$(DC) logs -f
 
-.PHONY: check-create-volume
-check-create-volume:
+.PHONY: .build-base
+.build-base: .check-create-volume .check-create-network .init-env .generate-override
+	@echo "$(BLUE)Checking base image...$(RESET)"
+	@if docker image inspect inception/base:$(APP_VERSION) > /dev/null 2>&1; then \
+		echo "$(GREEN)Base image already exists: inception/base:$(APP_VERSION)$(RESET)"; \
+	else \
+		echo "$(BLUE)Building base image...$(RESET)"; \
+		$(DC) build base --no-cache; \
+		echo "$(GREEN)Base image has been built: inception/base:$(APP_VERSION)$(RESET)"; \
+	fi
+
+.PHONY: .check-create-volume
+.check-create-volume:
 	@echo "$(BLUE)Checking and creating volumes...$(RESET)"
 	@for vol in $(VOLUME_WP) $(VOLUME_DB); do \
 		if [ -z "$$(docker volume ls -q -f name=$$vol)" ]; then \
@@ -129,8 +130,8 @@ check-create-volume:
 		fi; \
 	done
 
-.PHONY: check-create-network
-check-create-network:
+.PHONY: .check-create-network
+.check-create-network:
 	@echo "$(BLUE)Checking and creating networks...$(RESET)"
 	@for net in $(NETWORK); do \
 		if [ -z "$$(docker network ls -q -f name=$$net)" ]; then \
@@ -141,8 +142,8 @@ check-create-network:
 		fi; \
 	done
 
-.PHONY: init-env
-init-env:
+.PHONY: .init-env
+.init-env:
 	@echo "$(BLUE)Initializing environment variables...$(RESET)"
 	$(eval USER_NAME=$(shell whoami))
 	@echo "Creating .env file..."
@@ -166,8 +167,8 @@ init-env:
 	@echo "VOLUME_DB=$(VOLUME_DB)" >> $(DIR_SRCS)/.env
 	@echo "NETWORK=$(NETWORK)" >> $(DIR_SRCS)/.env
 
-.PHONY: generate-override
-generate-override:
+.PHONY: .generate-override
+.generate-override:
 	@echo "$(BLUE)Generating docker-compose.override.yml...$(RESET)"
 	@sed -e 's#NETWORK_PLACEHOLDER#$(NETWORK)#g' \
 		-e 's#VOLUME_WP_PLACEHOLDER#$(VOLUME_WP)#g' \
@@ -178,10 +179,11 @@ generate-override:
 .PHONY: help
 help:
 	@echo "$(CYAN)Available targets:$(RESET)"
-	@echo "  $(YELLOW)build$(RESET)        - Build Docker images"
-	@echo "  $(YELLOW)run$(RESET)          - Build and start services"
-	@echo "  $(YELLOW)clean$(RESET)        - Stop and remove containers, volumes, and networks"
-	@echo "  $(YELLOW)re$(RESET)           - Rebuild and restart services"
-	@echo "  $(YELLOW)re-service$(RESET)   - Rebuild and restart a specific service. Usage: make re-service SERVICE=<service_name>"
-	@echo "  $(YELLOW)fclean$(RESET)       - Perform clean and remove all project images"
-	@echo "  $(YELLOW)logs$(RESET)         - Show service logs"
+	@echo "  $(YELLOW)build$(RESET)			- Build Docker images"
+	@echo "  $(YELLOW)run$(RESET)			- Build and start services"
+	@echo "  $(YELLOW)clean$(RESET)			- Stop and remove containers, volumes, and networks"
+	@echo "  $(YELLOW)re$(RESET)			- Rebuild and restart services"
+	@echo "  $(YELLOW)re-service$(RESET)	- Rebuild and restart a specific service. Usage: make re-service SERVICE=<service_name>"
+	@echo "  $(YELLOW)fclean$(RESET)		- Perform clean and remove all project images"
+	@echo "  $(YELLOW)logs$(RESET)			- Show service logs"
+
