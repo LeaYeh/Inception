@@ -10,6 +10,7 @@ RESET  := $(shell tput -Txterm sgr0)
 USER_NAME		= $(shell whoami)
 DIR_SRCS 		= ./srcs
 DIR_HOME 		= /home/$(USER_NAME)
+DIR_SECRET 		= $(DIR_HOME)/.secrets
 DIR_DATA 		= $(DIR_HOME)/data
 DIR_DATA_WP 	= $(DIR_DATA)/wordpress
 DIR_DATA_DB 	= $(DIR_DATA)/mariadb
@@ -25,7 +26,7 @@ SERVICES 		:= nginx db wordpress
 default: run
 
 .PHONY: run
-run: build
+run: build .setup-hosts
 	@echo "$(GREEN)Starting services...$(RESET)"
 	@$(DC) up -d
 	@echo "$(YELLOW)Waiting for services to start...$(RESET)"
@@ -92,15 +93,18 @@ re-service: .build-base
 clean:
 	@echo "$(YELLOW)Stopping and removing containers...$(RESET)"
 	@$(DC) down
+	@echo "$(RED)Removing all project images...$(RESET)"
+	@docker rmi -f $(shell docker images "inception/*" -q) || true
+	@echo "$(YELLOW)Removing dangling images...$(RESET)"
+	@docker image prune -f
+	@echo "$(GREEN)Image cleanup completed.$(RESET)"
+
+.PHONY: fclean
+fclean: clean
 	@echo "$(YELLOW)Removing volumes and networks...$(RESET)"
 	@docker volume rm $(VOLUME_WP) || true
 	@docker volume rm $(VOLUME_DB) || true
 	@docker network rm $(NETWORK) || true
-
-.PHONY: fclean
-fclean: clean
-	@echo "$(RED)Removing all project images...$(RESET)"
-	@docker rmi -f $(shell docker images "inception/*" -q) || true
 
 .PHONY: logs
 logs:
@@ -153,6 +157,14 @@ logs:
 	@echo "OS_VERSION=$(OS_VERSION)" >> $(DIR_SRCS)/.env
 	@echo "APP_VERSION=$(APP_VERSION)" >> $(DIR_SRCS)/.env
 	@echo "DOMAIN_NAME=$(USER_NAME).42.fr" >> $(DIR_SRCS)/.env
+
+	@echo "\n# Directory setup" >> $(DIR_SRCS)/.env
+	@echo "DIR_HOME=$(DIR_HOME)" >> $(DIR_SRCS)/.env
+	@echo "DIR_SECRET=$(DIR_SECRET)" >> $(DIR_SRCS)/.env
+	@echo "DIR_DATA=$(DIR_DATA)" >> $(DIR_SRCS)/.env
+	@echo "DIR_DATA_WP=$(DIR_DATA_WP)" >> $(DIR_SRCS)/.env
+	@echo "DIR_DATA_DB=$(DIR_DATA_DB)" >> $(DIR_SRCS)/.env
+
 	@echo "\n# DB setup" >> $(DIR_SRCS)/.env
 	@echo "MYSQL_ROOT_PASSWORD=$(shell openssl rand -base64 12)" >> $(DIR_SRCS)/.env
 	@echo "MYSQL_ADMIN=$(USER_NAME)" >> $(DIR_SRCS)/.env
@@ -162,6 +174,7 @@ logs:
 	@echo "MYSQL_USER=wordpress" >> $(DIR_SRCS)/.env
 	@echo "MYSQL_USER_PASSWORD=$(shell openssl rand -base64 12)" >> $(DIR_SRCS)/.env
 	@echo "MYSQL_USER_EMAIL=wordpress@42.fr" >> $(DIR_SRCS)/.env
+	
 	@echo "\n# Docker-compose setup" >> $(DIR_SRCS)/.env
 	@echo "VOLUME_WP=$(VOLUME_WP)" >> $(DIR_SRCS)/.env
 	@echo "VOLUME_DB=$(VOLUME_DB)" >> $(DIR_SRCS)/.env
@@ -175,6 +188,17 @@ logs:
 		-e 's#VOLUME_DB_PLACEHOLDER#$(VOLUME_DB)#g' \
 		$(DIR_SRCS)/docker-compose.override.yml.template > $(DIR_SRCS)/docker-compose.override.yml
 	@echo "$(GREEN)docker-compose.override.yml has been generated.$(RESET)"
+
+.PHONY: .setup-hosts
+.setup-hosts:
+	@echo "$(BLUE)Setting up /etc/hosts...$(RESET)"
+	@if grep -q "$(USER_NAME).42.fr" /etc/hosts; then \
+		echo "$(GREEN)Host entry already exists.$(RESET)"; \
+	else \
+		echo "$(YELLOW)Adding host entry...$(RESET)"; \
+		echo "127.0.0.1 $(USER_NAME).42.fr" | sudo tee -a /etc/hosts > /dev/null; \
+		echo "$(GREEN)Host entry added successfully.$(RESET)"; \
+	fi
 
 .PHONY: help
 help:

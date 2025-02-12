@@ -12,6 +12,4 @@ COPY    tools/generate-ssl.sh /etc/nginx/ssl/generate-ssl.sh
 RUN     chmod +x /etc/nginx/ssl/generate-ssl.sh
 RUN     /etc/nginx/ssl/generate-ssl.sh && rm /etc/nginx/ssl/generate-ssl.sh
 
-COPY    conf/nginx.conf /etc/nginx/nginx.conf
-
 ENTRYPOINT ["nginx", "-g", "daemon off;"]

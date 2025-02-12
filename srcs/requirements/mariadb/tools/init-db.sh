@@ -16,6 +16,8 @@ wait_for_mariadb() {
 }
 
 init_database() {
+
+    echo "Creating database and users..."
     mysql -u root << EOF
 CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
 CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_USER_PASSWORD}';
@@ -26,13 +28,28 @@ GRANT ALL PRIVILEGES ON *.* TO '${MYSQL_ADMIN}'@'%' WITH GRANT OPTION;
 
 FLUSH PRIVILEGES;
 EOF
+
+#     echo "Changing root password..."
+#     mysql -uroot << EOF
+# ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
+# EOF
+
+}
+
+verify_users() {
+    echo "Verifying users..."
+    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" << EOF
+SELECT User, Host FROM mysql.user WHERE User IN ('${MYSQL_USER}', '${MYSQL_ADMIN}');
+SHOW GRANTS FOR '${MYSQL_USER}'@'%';
+SHOW GRANTS FOR '${MYSQL_ADMIN}'@'%';
+EOF
 }
 
 main() {
     chown -R mysql:mysql /var/lib/mysql
 
     if [ ! -d "/var/lib/mysql/mysql" ]; then
-        mysql_install_db --user=mysql --datadir=/var/lib/mysql
+        mysql_install_db --user=mysql --datadir=/var/lib/mysql --skip-test-db
     fi
 
     mysqld --user=mysql &
@@ -40,6 +57,8 @@ main() {
     wait_for_mariadb
 
     init_database
+
+    verify_users
 
     mysqladmin -u root -p"${MYSQL_ROOT_PASSWORD}" shutdown
 

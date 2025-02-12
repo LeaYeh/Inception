@@ -21,13 +21,17 @@ services:
       - ${VOLUME_DB}:/var/lib/mariadb
     networks:
       - ${NETWORK}
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_USER_PASSWORD}
-      - MYSQL_ADMIN=${MYSQL_ADMIN}
-      - MYSQL_ADMIN_PASSWORD=${MYSQL_ADMIN_PASSWORD}
+    configs:
+      - source: mariadb_config
+        target: /etc/mysql/my.cnf
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER}", "--password=${MYSQL_USER_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    env_file:
+      - .env
 
   wordpress:
     build:
@@ -43,14 +47,17 @@ services:
       - ${VOLUME_WP}:/usr/share/wordpress
     networks:
       - ${NETWORK}
-    environment:
-      - WP_ADMIN_USER=${MYSQL_ADMIN}
-      - WP_ADMIN_PASSWORD=${MYSQL_ADMIN_PASSWORD}
-      - WP_ADMIN_EMAIL=${MYSQL_ADMIN_EMAIL}
-      - WP_DB_NAME=${MYSQL_DATABASE}
-      - WP_USER=${MYSQL_USER}
-      - WP_PASSWORD=${MYSQL_USER_PASSWORD}
-      - WP_USER_EMAIL=${MYSQL_USER_EMAIL}
+    configs:
+      - source: wordpress_config
+        target: /var/www/html/wp-config.php
+    healthcheck:
+      test: ["CMD", "php", "-f", "/var/www/html/wordpress/wp-includes/version.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 1m
+    env_file:
+      - .env
 
   nginx:
     build:
@@ -69,5 +76,21 @@ services:
       - ${VOLUME_WP}:/usr/share/wordpress
     networks:
       - ${NETWORK}
-    environment:
-      - DOMAIN_NAME=${DOMAIN_NAME}
+    configs:
+      - source: nginx_config
+        target: /etc/nginx/nginx.conf
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    env_file:
+      - .env
+
+configs:
+  nginx_config:
+    file: ./requirements/nginx/conf/nginx.conf
+  mariadb_config:
+    file: ./requirements/mariadb/conf/my.cnf
+  wordpress_config:
+    file: ./requirements/wordpress/conf/wp-config.php
