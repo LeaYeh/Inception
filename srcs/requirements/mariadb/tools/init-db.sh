@@ -29,10 +29,10 @@ GRANT ALL PRIVILEGES ON *.* TO '${MYSQL_ADMIN}'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 EOF
 
-#     echo "Changing root password..."
-#     mysql -uroot << EOF
-# ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
-# EOF
+    echo "Changing root password..."
+    mysql -uroot << EOF
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
+EOF
 
 }
 
@@ -67,4 +67,6 @@ main() {
 
 main
 
-exec mysqld --user=mysql
+exec "$@"
+
+# exec mysqld --user=mysql

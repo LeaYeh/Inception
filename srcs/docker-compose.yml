@@ -15,6 +15,7 @@ services:
         - BASE_IMAGE=inception/base:${APP_VERSION}
       context: ./requirements/mariadb
       dockerfile: Dockerfile
+    container_name: db
     image: inception/mariadb:${APP_VERSION}
     restart: always
     volumes:
@@ -23,7 +24,7 @@ services:
       - ${NETWORK}
     configs:
       - source: mariadb_config
-        target: /etc/mysql/my.cnf
+        target: /etc/my.cnf
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER}", "--password=${MYSQL_USER_PASSWORD}"]
       interval: 10s
@@ -39,6 +40,7 @@ services:
         - BASE_IMAGE=inception/base:${APP_VERSION}
       context: ./requirements/wordpress
       dockerfile: Dockerfile
+    container_name: wordpress
     image: inception/wordpress:${APP_VERSION}
     restart: always
     depends_on:
@@ -47,9 +49,11 @@ services:
       - ${VOLUME_WP}:/usr/share/wordpress
     networks:
       - ${NETWORK}
-    configs:
-      - source: wordpress_config
-        target: /var/www/html/wp-config.php
+    ports:
+      - "3306:3306"
+    # configs:
+    #   - source: wordpress_config
+    #     target: /var/www/html/wp-config.php
     healthcheck:
       test: ["CMD", "php", "-f", "/var/www/html/wordpress/wp-includes/version.php"]
       interval: 30s
@@ -66,6 +70,7 @@ services:
         - DOMAIN_NAME="${DOMAIN_NAME}"
       context: ./requirements/nginx
       dockerfile: Dockerfile
+    container_name: nginx
     image: inception/nginx:${APP_VERSION}
     restart: always
     ports:
