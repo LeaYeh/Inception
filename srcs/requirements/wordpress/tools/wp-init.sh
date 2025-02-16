@@ -48,7 +48,8 @@ else
       --dbname="${MYSQL_DATABASE}" \
       --dbuser="${MYSQL_USER}" \
       --dbpass="${MYSQL_USER_PASSWORD}" \
-      --dbhost="db:3306" \
+      --dbhost="db" \
+      --debug \
       --dbprefix="wp_" || { echo "❌ Failed to create wp-config.php"; exit 1; }
     echo "✅ wp-config.php created successfully!"
 fi
@@ -57,13 +58,15 @@ fi
 echo "🔽 Installing WordPress..."
 if wp core is-installed --allow-root; then
     echo "✅ WordPress is already installed."
+    wp core verify-checksums --allow-root || { echo "❌ Failed to verify WordPress checksums"; exit 1; }
 else
     wp core install --allow-root \
       --url="${DOMAIN_NAME}" \
       --title="Inception WordPress" \
       --admin_user="${MYSQL_ADMIN}" \
       --admin_password="${MYSQL_ADMIN_PASSWORD}" \
-      --admin_email="${MYSQL_ADMIN_EMAIL}" || { echo "❌ Failed to install WordPress"; exit 1; }
+      --admin_email="${MYSQL_ADMIN_EMAIL}" \
+      --skip-email || { echo "❌ Failed to install WordPress"; exit 1; }
     echo "✅ WordPress installed successfully!"
 fi
 
@@ -84,5 +87,4 @@ fi
 
 echo "🎉 WordPress setup completed successfully!"
 
-### 🔹 Start PHP-FPM
-exec php-fpm82 --nodaemonize
+exec "$@"

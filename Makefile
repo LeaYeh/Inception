@@ -1,27 +1,28 @@
-RED    := $(shell tput -Txterm setaf 1)
-GREEN  := $(shell tput -Txterm setaf 2)
-YELLOW := $(shell tput -Txterm setaf 3)
-BLUE   := $(shell tput -Txterm setaf 4)
-MAGENTA:= $(shell tput -Txterm setaf 5)
-CYAN   := $(shell tput -Txterm setaf 6)
-WHITE  := $(shell tput -Txterm setaf 7)
-RESET  := $(shell tput -Txterm sgr0)
+RED    			:= $(shell tput -Txterm setaf 1)
+GREEN  				:= $(shell tput -Txterm setaf 2)
+YELLOW 				:= $(shell tput -Txterm setaf 3)
+BLUE   				:= $(shell tput -Txterm setaf 4)
+MAGENTA				:= $(shell tput -Txterm setaf 5)
+CYAN   				:= $(shell tput -Txterm setaf 6)
+WHITE  				:= $(shell tput -Txterm setaf 7)
+RESET  				:= $(shell tput -Txterm sgr0)
 
-USER_NAME		= $(shell whoami)
-DIR_SRCS 		= ./srcs
-DIR_HOME 		= /home/$(USER_NAME)
-DIR_SECRET 		= $(DIR_HOME)/.secrets
-DIR_DATA 		= $(DIR_HOME)/data
-DIR_DATA_WP 	= $(DIR_DATA)/wordpress
-DIR_DATA_DB 	= $(DIR_DATA)/mariadb
-DC 				= DOCKER_BUILDKIT=0 docker compose -f $(DIR_SRCS)/docker-compose.yml -f $(DIR_SRCS)/docker-compose.override.yml
-APP_VERSION 	= 0.0.1
-OS 				= alpine
-OS_VERSION 		= 3.19
-VOLUME_WP 		= wp-files
-VOLUME_DB 		= db-data
-NETWORK 		= inception-network
-SERVICES 		:= nginx db wordpress
+# Configuration
+USER_NAME			= $(shell whoami)
+DIR_SRCS 			= ./srcs
+DIR_HOME 			= /Users/$(USER_NAME)
+DIR_SECRET 			= $(DIR_HOME)/.secrets
+DIR_DATA 			= $(DIR_HOME)/data
+DIR_DATA_WP 		= $(DIR_DATA)/wordpress
+DIR_DATA_DB 		= $(DIR_DATA)/mariadb
+DC 					= DOCKER_BUILDKIT=0 docker compose -f $(DIR_SRCS)/docker-compose.yml
+APP_VERSION 		= 0.0.1
+OS 					= alpine
+OS_VERSION 			= 3.19
+VOLUME_WP 			= wp-files
+VOLUME_DB 			= db-data
+NETWORK 			= inception-network
+SERVICES 			:= nginx db wordpress
 
 default: run
 
@@ -53,7 +54,7 @@ run: build .setup-hosts
 	@echo "$(GREEN)Setup completed successfully.$(RESET)"
 
 .PHONY: build
-build: .build-base
+build: .build-base .init-env
 	@echo "$(BLUE)Checking other images...$(RESET)"
 	@for service in $(SERVICES); do \
 		if docker image inspect inception/$$service:$(APP_VERSION) > /dev/null 2>&1; then \
@@ -77,6 +78,8 @@ re-service: .build-base
 	@echo "$(YELLOW)Rebuilding service: $(SERVICE)$(RESET)"
 	@$(DC) stop $(SERVICE)
 	@$(DC) rm -f $(SERVICE)
+	@echo "$(YELLOW)Removing $(SERVICE) image...$(RESET)"
+	@docker rmi inception/$(SERVICE):$(APP_VERSION) || true
 	@DOCKER_BUILDKIT=0 $(DC) build --no-cache $(SERVICE)
 	@$(DC) up -d $(SERVICE)
 	@echo "$(GREEN)Service $(SERVICE) has been rebuilt and restarted.$(RESET)"
@@ -105,6 +108,8 @@ fclean: clean
 	@docker volume rm $(VOLUME_WP) || true
 	@docker volume rm $(VOLUME_DB) || true
 	@docker network rm $(NETWORK) || true
+	rm -f $(DIR_SRCS)/.env
+	rm -f $(DIR_SRCS)/docker-compose.override.yml
 
 .PHONY: logs
 logs:
@@ -112,7 +117,7 @@ logs:
 	@$(DC) logs -f
 
 .PHONY: .build-base
-.build-base: .check-create-volume .check-create-network .init-env .generate-override
+.build-base: .check-create-volume .check-create-network .generate-override
 	@echo "$(BLUE)Checking base image...$(RESET)"
 	@if docker image inspect inception/base:$(APP_VERSION) > /dev/null 2>&1; then \
 		echo "$(GREEN)Base image already exists: inception/base:$(APP_VERSION)$(RESET)"; \
@@ -150,7 +155,7 @@ logs:
 .init-env:
 	@echo "$(BLUE)Initializing environment variables...$(RESET)"
 	$(eval USER_NAME=$(shell whoami))
-	@echo "Creating .env file..."
+	@echo "$(YELLOW)Creating .env file..."
 	@echo "# $(DIR_SRCS)/.env" > $(DIR_SRCS)/.env
 	@echo "# Basic setup" >> $(DIR_SRCS)/.env
 	@echo "OS=$(OS)" >> $(DIR_SRCS)/.env
@@ -179,6 +184,8 @@ logs:
 	@echo "VOLUME_WP=$(VOLUME_WP)" >> $(DIR_SRCS)/.env
 	@echo "VOLUME_DB=$(VOLUME_DB)" >> $(DIR_SRCS)/.env
 	@echo "NETWORK=$(NETWORK)" >> $(DIR_SRCS)/.env
+
+	@echo "$(GREEN).env file has been created.$(RESET)"
 
 .PHONY: .generate-override
 .generate-override:

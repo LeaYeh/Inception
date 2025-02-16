@@ -1,3 +1,0 @@
-volumes:
-  wp-files:
-    driver: local

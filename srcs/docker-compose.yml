@@ -18,8 +18,8 @@ services:
     container_name: db
     image: inception/mariadb:${APP_VERSION}
     restart: always
-    volumes:
-      - ${VOLUME_DB}:/var/lib/mariadb
+    # volumes:
+    #   - ${VOLUME_DB}:/var/lib/mariadb
     networks:
       - ${NETWORK}
     configs:
@@ -45,15 +45,10 @@ services:
     restart: always
     depends_on:
       - db
-    volumes:
-      - ${VOLUME_WP}:/usr/share/wordpress
+    # volumes:
+    #   - ${VOLUME_WP}:/var/www/html
     networks:
       - ${NETWORK}
-    ports:
-      - "3306:3306"
-    # configs:
-    #   - source: wordpress_config
-    #     target: /var/www/html/wp-config.php
     healthcheck:
       test: ["CMD", "php", "-f", "/var/www/html/wordpress/wp-includes/version.php"]
       interval: 30s
@@ -77,8 +72,7 @@ services:
       - "443:443"
     depends_on:
       - wordpress
-    volumes:
-      - ${VOLUME_WP}:/usr/share/wordpress
+      - db
     networks:
       - ${NETWORK}
     configs:
@@ -97,5 +91,21 @@ configs:
     file: ./requirements/nginx/conf/nginx.conf
   mariadb_config:
     file: ./requirements/mariadb/conf/my.cnf
-  wordpress_config:
-    file: ./requirements/wordpress/conf/wp-config.php
+
+networks:
+  inception-network:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${DIR_DATA_DB}
+      o: bind
+  wp-files:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${DIR_DATA_WP}
+      o: bind

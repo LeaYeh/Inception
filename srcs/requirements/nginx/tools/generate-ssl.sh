@@ -4,6 +4,7 @@ if [ -z "$DOMAIN_NAME" ]; then
     exit 1
 fi
 
+echo "Generating SSL certificate for ${DOMAIN_NAME}..."
 openssl req -x509 -nodes \
     -days 365 \
     -newkey rsa:2048 \
@@ -14,3 +15,5 @@ openssl req -x509 -nodes \
 
 chmod 600 /etc/nginx/ssl/privatekey.pem
 chmod 644 /etc/nginx/ssl/certificate.pem
+
+echo "SSL certificate generated successfully!"

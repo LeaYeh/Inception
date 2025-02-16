@@ -2,8 +2,17 @@
 networks:
   NETWORK_PLACEHOLDER:
     external: true
+
 volumes:
   VOLUME_WP_PLACEHOLDER:
-    external: true
+    driver: local
+    driver_opts:
+      type: none
+      device: ${DIR_DATA_WP}
+      o: bind
   VOLUME_DB_PLACEHOLDER:
-    external: true
+    driver: local
+    driver_opts:
+      type: none
+      device: ${DIR_DATA_DB}
+      o: bind
