@@ -1,4 +1,4 @@
-RED    			:= $(shell tput -Txterm setaf 1)
+RED    				:= $(shell tput -Txterm setaf 1)
 GREEN  				:= $(shell tput -Txterm setaf 2)
 YELLOW 				:= $(shell tput -Txterm setaf 3)
 BLUE   				:= $(shell tput -Txterm setaf 4)
@@ -10,12 +10,12 @@ RESET  				:= $(shell tput -Txterm sgr0)
 # Configuration
 USER_NAME			= $(shell whoami)
 DIR_SRCS 			= ./srcs
-DIR_HOME 			= /Users/$(USER_NAME)
+DIR_HOME 			= $(HOME)
 DIR_SECRET 			= $(DIR_HOME)/.secrets
 DIR_DATA 			= $(DIR_HOME)/data
 DIR_DATA_WP 		= $(DIR_DATA)/wordpress
 DIR_DATA_DB 		= $(DIR_DATA)/mariadb
-DC 					= DOCKER_BUILDKIT=0 docker compose -f $(DIR_SRCS)/docker-compose.yml
+DC 					= DOCKER_BUILDKIT=0 docker compose -f $(DIR_SRCS)/docker-compose.yml -f $(DIR_SRCS)/docker-compose.override.yml
 APP_VERSION 		= 0.0.1
 OS 					= alpine
 OS_VERSION 			= 3.19

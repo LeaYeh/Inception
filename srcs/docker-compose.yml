@@ -18,8 +18,8 @@ services:
     container_name: db
     image: inception/mariadb:${APP_VERSION}
     restart: always
-    # volumes:
-    #   - ${VOLUME_DB}:/var/lib/mariadb
+    volumes:
+      - ${VOLUME_DB}:/var/lib/mariadb
     networks:
       - ${NETWORK}
     configs:
@@ -45,8 +45,8 @@ services:
     restart: always
     depends_on:
       - db
-    # volumes:
-    #   - ${VOLUME_WP}:/var/www/html
+    volumes:
+      - ${VOLUME_WP}:/var/www/html
     networks:
       - ${NETWORK}
     healthcheck:
