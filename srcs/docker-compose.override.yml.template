@@ -1,16 +1,19 @@
 # ./srcs/docker-compose.override.yml
 networks:
   NETWORK_PLACEHOLDER:
+    name: NETWORK_PLACEHOLDER
     external: true
 
 volumes:
   VOLUME_WP_PLACEHOLDER:
+    name: VOLUME_WP_PLACEHOLDER
     driver: local
     driver_opts:
       type: none
       device: ${DIR_DATA_WP}
       o: bind
   VOLUME_DB_PLACEHOLDER:
+    name: VOLUME_DB_PLACEHOLDER
     driver: local
     driver_opts:
       type: none
