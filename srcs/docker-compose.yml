@@ -1,25 +1,15 @@
 # docker-compose.yml
 services:
-  base:
-    build:
-      args:
-        - OS=${OS}
-        - OS_VERSION=${OS_VERSION}
-      context: ./requirements/base
-      dockerfile: Dockerfile
-    image: inception/base:${APP_VERSION}
-
   db:
     build:
       args:
         - BASE_IMAGE=inception/base:${APP_VERSION}
       context: ./requirements/mariadb
       dockerfile: Dockerfile
-    container_name: db
     image: inception/mariadb:${APP_VERSION}
     restart: always
     volumes:
-      - ${VOLUME_DB}:/var/lib/mariadb
+      - db-data:/var/lib/mysql
     networks:
       - ${NETWORK}
     configs:
@@ -40,13 +30,12 @@ services:
         - BASE_IMAGE=inception/base:${APP_VERSION}
       context: ./requirements/wordpress
       dockerfile: Dockerfile
-    container_name: wordpress
     image: inception/wordpress:${APP_VERSION}
     restart: always
     depends_on:
       - db
     volumes:
-      - ${VOLUME_WP}:/var/www/html
+      - wp-files:/var/www/html
     networks:
       - ${NETWORK}
     healthcheck:
@@ -65,7 +54,6 @@ services:
         - DOMAIN_NAME="${DOMAIN_NAME}"
       context: ./requirements/nginx
       dockerfile: Dockerfile
-    container_name: nginx
     image: inception/nginx:${APP_VERSION}
     restart: always
     ports:
@@ -75,6 +63,8 @@ services:
       - db
     networks:
       - ${NETWORK}
+    volumes:
+      - wp-files:/var/www/html
     configs:
       - source: nginx_config
         target: /etc/nginx/nginx.conf
@@ -97,15 +87,15 @@ networks:
     driver: bridge
 
 volumes:
-  db-data:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${DIR_DATA_DB}
-      o: bind
   wp-files:
     driver: local
     driver_opts:
       type: none
       device: ${DIR_DATA_WP}
+      o: bind
+  db-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${DIR_DATA_DB}
       o: bind

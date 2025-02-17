@@ -1,8 +1,10 @@
 # srcs/requirements/wordpress/Dockerfile
-ARG     BASE_IMAGE
-FROM    ${BASE_IMAGE}
-
+# ARG     BASE_IMAGE
+# FROM    ${BASE_IMAGE}
+FROM    alpine:3.19
 ARG     USER_NAME=www-data
+
+RUN     apk update && apk upgrade && apk add --no-cache bash curl
 
 RUN     set -x \
             && addgroup -g 82 -S ${USER_NAME} || true \

@@ -1,8 +1,10 @@
 # srcs/requirements/mariadb/Dockerfile
-ARG     BASE_IMAGE
-FROM    ${BASE_IMAGE}
-
+# ARG     BASE_IMAGE
+# FROM    ${BASE_IMAGE}
+FROM    alpine:3.19
 ARG     USER_NAME=mysql
+
+RUN     apk update && apk upgrade && apk add --no-cache bash curl
 
 RUN     set -x \
             && addgroup -g 82 -S ${USER_NAME} || true \
@@ -16,13 +18,8 @@ RUN     mkdir -p /var/lib/mysql /var/run/mysqld /local/bin \
             && chown -R ${USER_NAME}:${USER_NAME} /var/lib/mysql /var/run/mysqld /local/bin \
             && chmod 755 /local/bin/init-db.sh
 
-RUN     mkdir -p /usr/lib/mariadb \
-        && chown -R ${USER_NAME}:${USER_NAME} /usr/lib/mariadb \
-        && chmod 755 /usr/lib/mariadb
-
 RUN     chmod 755 /var/lib/mysql /var/run/mysqld
 
-EXPOSE  3306
 
 WORKDIR /var/lib/mysql
 

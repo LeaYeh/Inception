@@ -1,37 +1,39 @@
-RED    				:= $(shell tput -Txterm setaf 1)
-GREEN  				:= $(shell tput -Txterm setaf 2)
-YELLOW 				:= $(shell tput -Txterm setaf 3)
-BLUE   				:= $(shell tput -Txterm setaf 4)
+RED					:= $(shell tput -Txterm setaf 1)
+GREEN				:= $(shell tput -Txterm setaf 2)
+YELLOW				:= $(shell tput -Txterm setaf 3)
+BLUE				:= $(shell tput -Txterm setaf 4)
 MAGENTA				:= $(shell tput -Txterm setaf 5)
-CYAN   				:= $(shell tput -Txterm setaf 6)
-WHITE  				:= $(shell tput -Txterm setaf 7)
-RESET  				:= $(shell tput -Txterm sgr0)
+CYAN				:= $(shell tput -Txterm setaf 6)
+WHITE				:= $(shell tput -Txterm setaf 7)
+RESET				:= $(shell tput -Txterm sgr0)
 
 # Configuration
+PROJECT_NAME		= inception
 USER_NAME			= $(shell whoami)
-DIR_SRCS 			= ./srcs
-DIR_HOME 			= $(HOME)
+DIR_SRCS			= ./srcs
+DIR_HOME			= $(HOME)
 DIR_SECRET 			= $(DIR_HOME)/.secrets
-DIR_DATA 			= $(DIR_HOME)/data
-DIR_DATA_WP 		= $(DIR_DATA)/wordpress
-DIR_DATA_DB 		= $(DIR_DATA)/mariadb
-DC 					= DOCKER_BUILDKIT=0 docker compose -f $(DIR_SRCS)/docker-compose.yml -f $(DIR_SRCS)/docker-compose.override.yml
+DIR_DATA			= $(DIR_HOME)/data
+DIR_DATA_WP			= $(DIR_DATA)/wordpress
+DIR_DATA_DB			= $(DIR_DATA)/mariadb
+# DC 					= DOCKER_BUILDKIT=0 docker compose -f $(DIR_SRCS)/docker-compose.yml -f $(DIR_SRCS)/docker-compose.override.yml
+DC 					= DOCKER_BUILDKIT=1 docker compose -p $(PROJECT_NAME) -f $(DIR_SRCS)/docker-compose.yml -f $(DIR_SRCS)/docker-compose.override.yml --env-file $(DIR_SRCS)/.env
 APP_VERSION 		= 0.0.1
 OS 					= alpine
 OS_VERSION 			= 3.19
 VOLUME_WP 			= wp-files
 VOLUME_DB 			= db-data
-NETWORK 			= inception-network
+NETWORK 			= network
 SERVICES 			:= nginx db wordpress
 
-default: run
+default: up
 
-.PHONY: run
-run: build .setup-hosts
+.PHONY: up
+up: init
 	@echo "$(GREEN)Starting services...$(RESET)"
 	@$(DC) up -d
 	@echo "$(YELLOW)Waiting for services to start...$(RESET)"
-	@sleep 10
+	@sleep 5
 	@echo "$(YELLOW)Checking service status...$(RESET)"
 	@for service in $(SERVICES); do \
 		if $(DC) ps --services --filter "status=running" | grep -q $$service; then \
@@ -53,21 +55,27 @@ run: build .setup-hosts
 	fi
 	@echo "$(GREEN)Setup completed successfully.$(RESET)"
 
+.PHONY: down
+down:
+	@echo "$(YELLOW)Destory services...$(RESET)"
+	@$(DC) down || true
+	@echo "$(GREEN)Services have been stopped.$(RESET)"
+
 .PHONY: build
-build: .build-base .init-env
+build: .build-base
 	@echo "$(BLUE)Checking other images...$(RESET)"
 	@for service in $(SERVICES); do \
 		if docker image inspect inception/$$service:$(APP_VERSION) > /dev/null 2>&1; then \
 			echo "$(GREEN)Image for $$service already exists.$(RESET)"; \
 		else \
-			echo "$(BLUE)Building image for $$service...$(RESET)"; \
+			echo "$(BLUE)Building image for $$service without cache...$(RESET)"; \
 			$(DC) build $$service --no-cache; \
 		fi; \
 	done
 	@echo "$(GREEN)All necessary images are ready.$(RESET)"
 
 .PHONY: re
-re: clean run
+re: fclean build up
 
 .PHONY: re-service
 re-service: .build-base
@@ -93,11 +101,9 @@ re-service: .build-base
 	fi
 
 .PHONY: clean
-clean:
-	@echo "$(YELLOW)Stopping and removing containers...$(RESET)"
-	@$(DC) down
+clean: down
 	@echo "$(RED)Removing all project images...$(RESET)"
-	@docker rmi -f $(shell docker images "inception/*" -q) || true
+	@docker rmi inception/$(SERVICE):$(APP_VERSION) || true
 	@echo "$(YELLOW)Removing dangling images...$(RESET)"
 	@docker image prune -f
 	@echo "$(GREEN)Image cleanup completed.$(RESET)"
@@ -108,8 +114,10 @@ fclean: clean
 	@docker volume rm $(VOLUME_WP) || true
 	@docker volume rm $(VOLUME_DB) || true
 	@docker network rm $(NETWORK) || true
-	rm -f $(DIR_SRCS)/.env
-	rm -f $(DIR_SRCS)/docker-compose.override.yml
+	@rm -f $(DIR_SRCS)/.env || true
+	rm -f $(DIR_SRCS)/docker-compose.override.yml || true
+	rm -rf /home/lyeh/data || true
+
 
 .PHONY: logs
 logs:
@@ -117,7 +125,8 @@ logs:
 	@$(DC) logs -f
 
 .PHONY: .build-base
-.build-base: .check-create-volume .check-create-network .generate-override
+# .build-base: .generate-override
+.build-base:
 	@echo "$(BLUE)Checking base image...$(RESET)"
 	@if docker image inspect inception/base:$(APP_VERSION) > /dev/null 2>&1; then \
 		echo "$(GREEN)Base image already exists: inception/base:$(APP_VERSION)$(RESET)"; \
@@ -127,65 +136,53 @@ logs:
 		echo "$(GREEN)Base image has been built: inception/base:$(APP_VERSION)$(RESET)"; \
 	fi
 
-.PHONY: .check-create-volume
-.check-create-volume:
-	@echo "$(BLUE)Checking and creating volumes...$(RESET)"
-	@for vol in $(VOLUME_WP) $(VOLUME_DB); do \
-		if [ -z "$$(docker volume ls -q -f name=$$vol)" ]; then \
-			echo "$(YELLOW)Docker volume $$vol does not exist. Creating...$(RESET)"; \
-			docker volume create $$vol; \
-		else \
-			echo "$(GREEN)Docker volume $$vol already exists.$(RESET)"; \
-		fi; \
-	done
+.PHONY: init
+init: .setup-hosts .init-env .init-dir .generate-override
+	@echo "$(GREEN)Initial success!$(RESET)"
 
-.PHONY: .check-create-network
-.check-create-network:
-	@echo "$(BLUE)Checking and creating networks...$(RESET)"
-	@for net in $(NETWORK); do \
-		if [ -z "$$(docker network ls -q -f name=$$net)" ]; then \
-			echo "$(YELLOW)Docker network $$net does not exist. Creating...$(RESET)"; \
-			docker network create $$net; \
-		else \
-			echo "$(GREEN)Docker network $$net already exists.$(RESET)"; \
-		fi; \
-	done
+.PHONY: .init-dir
+.init-dir:
+	@echo "$(YELLOW)Create Directory...$(RESET)"
+	# @rm -rf $(DIR_DATA)
+	@mkdir -p $(DIR_DATA_DB)
+	@mkdir -p $(DIR_DATA_WP)
 
 .PHONY: .init-env
 .init-env:
-	@echo "$(BLUE)Initializing environment variables...$(RESET)"
-	$(eval USER_NAME=$(shell whoami))
-	@echo "$(YELLOW)Creating .env file..."
-	@echo "# $(DIR_SRCS)/.env" > $(DIR_SRCS)/.env
-	@echo "# Basic setup" >> $(DIR_SRCS)/.env
-	@echo "OS=$(OS)" >> $(DIR_SRCS)/.env
-	@echo "OS_VERSION=$(OS_VERSION)" >> $(DIR_SRCS)/.env
-	@echo "APP_VERSION=$(APP_VERSION)" >> $(DIR_SRCS)/.env
-	@echo "DOMAIN_NAME=$(USER_NAME).42.fr" >> $(DIR_SRCS)/.env
-
-	@echo "\n# Directory setup" >> $(DIR_SRCS)/.env
-	@echo "DIR_HOME=$(DIR_HOME)" >> $(DIR_SRCS)/.env
-	@echo "DIR_SECRET=$(DIR_SECRET)" >> $(DIR_SRCS)/.env
-	@echo "DIR_DATA=$(DIR_DATA)" >> $(DIR_SRCS)/.env
-	@echo "DIR_DATA_WP=$(DIR_DATA_WP)" >> $(DIR_SRCS)/.env
-	@echo "DIR_DATA_DB=$(DIR_DATA_DB)" >> $(DIR_SRCS)/.env
-
-	@echo "\n# DB setup" >> $(DIR_SRCS)/.env
-	@echo "MYSQL_ROOT_PASSWORD=$(shell openssl rand -base64 12)" >> $(DIR_SRCS)/.env
-	@echo "MYSQL_ADMIN=$(USER_NAME)" >> $(DIR_SRCS)/.env
-	@echo "MYSQL_ADMIN_PASSWORD=$(shell openssl rand -base64 12)" >> $(DIR_SRCS)/.env
-	@echo "MYSQL_ADMIN_EMAIL=$(USER_NAME)@42.fr" >> $(DIR_SRCS)/.env
-	@echo "MYSQL_DATABASE=wordpress" >> $(DIR_SRCS)/.env
-	@echo "MYSQL_USER=wordpress" >> $(DIR_SRCS)/.env
-	@echo "MYSQL_USER_PASSWORD=$(shell openssl rand -base64 12)" >> $(DIR_SRCS)/.env
-	@echo "MYSQL_USER_EMAIL=wordpress@42.fr" >> $(DIR_SRCS)/.env
-	
-	@echo "\n# Docker-compose setup" >> $(DIR_SRCS)/.env
-	@echo "VOLUME_WP=$(VOLUME_WP)" >> $(DIR_SRCS)/.env
-	@echo "VOLUME_DB=$(VOLUME_DB)" >> $(DIR_SRCS)/.env
-	@echo "NETWORK=$(NETWORK)" >> $(DIR_SRCS)/.env
-
-	@echo "$(GREEN).env file has been created.$(RESET)"
+	@if [ ! -e $(DIR_SRCS)/.env ]; then \
+		echo "$(BLUE)Initializing environment variables...$(RESET)"; \
+		mkdir -p $(DIR_SRCS); \
+		USER_NAME=$$(whoami); \
+		echo "$(YELLOW)Creating .env file..."; \
+		echo "# $(DIR_SRCS)/.env" > $(DIR_SRCS)/.env; \
+		echo "# Basic setup" >> $(DIR_SRCS)/.env; \
+		echo "OS=$(OS)" >> $(DIR_SRCS)/.env; \
+		echo "OS_VERSION=$(OS_VERSION)" >> $(DIR_SRCS)/.env; \
+		echo "APP_VERSION=$(APP_VERSION)" >> $(DIR_SRCS)/.env; \
+		echo "DOMAIN_NAME=$$USER_NAME.42.fr" >> $(DIR_SRCS)/.env; \
+		echo "" >> $(DIR_SRCS)/.env; \
+		echo "# Directory setup" >> $(DIR_SRCS)/.env; \
+		echo "DIR_SECRET=$(DIR_SECRET)" >> $(DIR_SRCS)/.env; \
+		echo "DIR_DATA_WP=$(DIR_DATA_WP)" >> $(DIR_SRCS)/.env; \
+		echo "DIR_DATA_DB=$(DIR_DATA_DB)" >> $(DIR_SRCS)/.env; \
+		echo "" >> $(DIR_SRCS)/.env; \
+		echo "# DB setup" >> $(DIR_SRCS)/.env; \
+		echo "DB_HOST=db" >> $(DIR_SRCS)/.env; \
+		echo "MYSQL_ROOT_PASSWORD=$$(openssl rand -base64 12 | tr -d '=+/')" >> $(DIR_SRCS)/.env; \
+		echo "MYSQL_ADMIN=$$USER_NAME" >> $(DIR_SRCS)/.env; \
+		echo "MYSQL_ADMIN_PASSWORD=$$(openssl rand -base64 12 | tr -d '=+/')" >> $(DIR_SRCS)/.env; \
+		echo "MYSQL_ADMIN_EMAIL=$$USER_NAME@42.fr" >> $(DIR_SRCS)/.env; \
+		echo "MYSQL_DATABASE=wordpress" >> $(DIR_SRCS)/.env; \
+		echo "MYSQL_USER=wordpress" >> $(DIR_SRCS)/.env; \
+		echo "MYSQL_USER_PASSWORD=$$(openssl rand -base64 12 | tr -d '=+/')" >> $(DIR_SRCS)/.env; \
+		echo "MYSQL_USER_EMAIL=wordpress@42.fr" >> $(DIR_SRCS)/.env; \
+		echo "" >> $(DIR_SRCS)/.env; \
+		echo "# Compose setup" >> $(DIR_SRCS)/.env; \
+		echo "NETWORK=$(NETWORK)" >> $(DIR_SRCS)/.env; \
+		echo "$(GREEN).env file has been created.$(RESET)"; \
+	else \
+		echo "$(YELLOW).env already exists.$(RESET)"; \
+	fi
 
 .PHONY: .generate-override
 .generate-override:
@@ -198,7 +195,7 @@ logs:
 
 .PHONY: .setup-hosts
 .setup-hosts:
-	@echo "$(BLUE)Setting up /etc/hosts...$(RESET)"
+	@echo "$(YELLOW)Setting up /etc/hosts...$(RESET)"
 	@if grep -q "$(USER_NAME).42.fr" /etc/hosts; then \
 		echo "$(GREEN)Host entry already exists.$(RESET)"; \
 	else \
@@ -209,9 +206,10 @@ logs:
 
 .PHONY: help
 help:
-	@echo "$(CYAN)Available targets:$(RESET)"
+	@echo "  $(CYAN)Available targets:$(RESET)"
 	@echo "  $(YELLOW)build$(RESET)			- Build Docker images"
-	@echo "  $(YELLOW)run$(RESET)			- Build and start services"
+	@echo "  $(YELLOW)up$(RESET)			- Build and start services"
+	@echo "  $(YELLOW)down$(RESET)			- Stop services"
 	@echo "  $(YELLOW)clean$(RESET)			- Stop and remove containers, volumes, and networks"
 	@echo "  $(YELLOW)re$(RESET)			- Rebuild and restart services"
 	@echo "  $(YELLOW)re-service$(RESET)	- Rebuild and restart a specific service. Usage: make re-service SERVICE=<service_name>"
