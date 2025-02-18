@@ -58,7 +58,7 @@ WORKDIR /var/www/html
 
 EXPOSE  9000
 
-# USER    ${USER_NAME}
+USER    ${USER_NAME}
 
 ENTRYPOINT [ "sh", "/usr/local/bin/wp-init.sh" ]
 
