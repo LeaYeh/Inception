@@ -18,13 +18,20 @@ wait_for_mariadb() {
 init_database() {
 
     echo "Creating database and users..."
+    echo "database: ${WP_DATABASE}"
+    echo "admin: ${MYSQL_ADMIN}"
+    echo "admin password: ${MYSQL_ADMIN_PASSWORD}"
+    echo "admin: ${WP_ADMIN}"
+    echo "admin password: ${WP_ADMIN_PASSWORD}"
+    
     mysql -uroot << EOF
-CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
-CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_USER_PASSWORD}';
-GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';
+CREATE DATABASE IF NOT EXISTS ${WP_DATABASE};
 
 CREATE USER IF NOT EXISTS '${MYSQL_ADMIN}'@'%' IDENTIFIED BY '${MYSQL_ADMIN_PASSWORD}';
 GRANT ALL PRIVILEGES ON *.* TO '${MYSQL_ADMIN}'@'%' WITH GRANT OPTION;
+
+CREATE USER IF NOT EXISTS '${WP_ADMIN}'@'%' IDENTIFIED BY '${WP_ADMIN_PASSWORD}';
+GRANT ALL PRIVILEGES ON *.* TO '${WP_ADMIN}'@'%' WITH GRANT OPTION;
 
 FLUSH PRIVILEGES;
 EOF
@@ -40,8 +47,8 @@ EOF
 verify_users() {
     echo "Verifying users..."
     mysql -u root << EOF
-SELECT User, Host FROM mysql.user WHERE User IN ('${MYSQL_USER}', '${MYSQL_ADMIN}');
-SHOW GRANTS FOR '${MYSQL_USER}'@'%';
+SELECT User, Host FROM mysql.user WHERE User IN ('${WP_ADMIN}', '${MYSQL_ADMIN}');
+SHOW GRANTS FOR '${WP_ADMIN}'@'%';
 SHOW GRANTS FOR '${MYSQL_ADMIN}'@'%';
 EOF
 }

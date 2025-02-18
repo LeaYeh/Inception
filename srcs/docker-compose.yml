@@ -16,7 +16,7 @@ services:
       - source: mariadb_config
         target: /etc/my.cnf
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER}", "--password=${MYSQL_USER_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_ADMIN}", "--password=${MYSQL_ADMIN_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -39,7 +39,7 @@ services:
     networks:
       - ${NETWORK}
     healthcheck:
-      test: ["CMD", "php", "-f", "/var/www/html/wordpress/wp-includes/version.php"]
+      test: ["CMD", "php", "-f", "/var/www/html/wp-includes/version.php"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -66,8 +66,8 @@ services:
     volumes:
       - wp-files:/var/www/html
     configs:
-      - source: nginx_config
-        target: /etc/nginx/nginx.conf
+      - source: nginx_config_template
+        target: /etc/nginx/nginx.conf.template
     healthcheck:
       test: ["CMD", "nginx", "-t"]
       interval: 30s
@@ -77,13 +77,13 @@ services:
       - .env
 
 configs:
-  nginx_config:
-    file: ./requirements/nginx/conf/nginx.conf
+  nginx_config_template:
+    file: ./requirements/nginx/conf/nginx.conf.template
   mariadb_config:
     file: ./requirements/mariadb/conf/my.cnf
 
 networks:
-  inception-network:
+  inception_network:
     driver: bridge
 
 volumes:

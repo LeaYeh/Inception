@@ -1,8 +1,8 @@
 <?php
-$host = getenv('MYSQL_HOST') ?: 'db';
-$user = getenv('MYSQL_USER');
-$pass = getenv('MYSQL_USER_PASSWORD');
-$db   = getenv('MYSQL_DATABASE');
+$host = getenv('DB_HOST') ?: 'db';
+$user = getenv('WP_ADMIN');
+$pass = getenv('WP_ADMIN_PASSWORD');
+$db   = getenv('WP_DATABASE');
 
 echo "Checking database connection...\n";
 echo "Host: $host\n";

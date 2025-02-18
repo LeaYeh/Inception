@@ -62,7 +62,7 @@ down:
 	@echo "$(GREEN)Services have been stopped.$(RESET)"
 
 .PHONY: build
-build: .build-base
+build: init .build-base
 	@echo "$(BLUE)Checking other images...$(RESET)"
 	@for service in $(SERVICES); do \
 		if docker image inspect inception/$$service:$(APP_VERSION) > /dev/null 2>&1; then \
@@ -103,7 +103,10 @@ re-service: .build-base
 .PHONY: clean
 clean: down
 	@echo "$(RED)Removing all project images...$(RESET)"
-	@docker rmi inception/$(SERVICE):$(APP_VERSION) || true
+	@for s in $(SERVICES); do \
+		echo "Removing inception/$$s:$(APP_VERSION)"; \
+		docker rmi inception/$$s:$(APP_VERSION) || true; \
+	done
 	@echo "$(YELLOW)Removing dangling images...$(RESET)"
 	@docker image prune -f
 	@echo "$(GREEN)Image cleanup completed.$(RESET)"
@@ -111,12 +114,12 @@ clean: down
 .PHONY: fclean
 fclean: clean
 	@echo "$(YELLOW)Removing volumes and networks...$(RESET)"
-	@docker volume rm $(VOLUME_WP) || true
-	@docker volume rm $(VOLUME_DB) || true
-	@docker network rm $(NETWORK) || true
+	@docker volume rm $(PROJECT_NAME)_$(VOLUME_WP) || true
+	@docker volume rm $(PROJECT_NAME)_$(VOLUME_DB) || true
+	@docker network rm $(PROJECT_NAME)_$(NETWORK) || true
 	@rm -f $(DIR_SRCS)/.env || true
 	rm -f $(DIR_SRCS)/docker-compose.override.yml || true
-	rm -rf /home/lyeh/data || true
+	rm -rf /Users/leayeh/data || true
 
 
 .PHONY: logs
@@ -171,11 +174,11 @@ init: .setup-hosts .init-env .init-dir .generate-override
 		echo "MYSQL_ROOT_PASSWORD=$$(openssl rand -base64 12 | tr -d '=+/')" >> $(DIR_SRCS)/.env; \
 		echo "MYSQL_ADMIN=$$USER_NAME" >> $(DIR_SRCS)/.env; \
 		echo "MYSQL_ADMIN_PASSWORD=$$(openssl rand -base64 12 | tr -d '=+/')" >> $(DIR_SRCS)/.env; \
-		echo "MYSQL_ADMIN_EMAIL=$$USER_NAME@42.fr" >> $(DIR_SRCS)/.env; \
-		echo "MYSQL_DATABASE=wordpress" >> $(DIR_SRCS)/.env; \
-		echo "MYSQL_USER=wordpress" >> $(DIR_SRCS)/.env; \
-		echo "MYSQL_USER_PASSWORD=$$(openssl rand -base64 12 | tr -d '=+/')" >> $(DIR_SRCS)/.env; \
-		echo "MYSQL_USER_EMAIL=wordpress@42.fr" >> $(DIR_SRCS)/.env; \
+		echo "WP_DATABASE=wordpress" >> $(DIR_SRCS)/.env; \
+		echo "WP_ADMIN=wordpress" >> $(DIR_SRCS)/.env; \
+		echo "WP_ADMIN_PASSWORD=$$(openssl rand -base64 12 | tr -d '=+/')" >> $(DIR_SRCS)/.env; \
+		echo "WP_USER=bob" >> $(DIR_SRCS)/.env; \
+		echo "WP_USER_PASSWORD=$$(openssl rand -base64 12 | tr -d '=+/')" >> $(DIR_SRCS)/.env; \
 		echo "" >> $(DIR_SRCS)/.env; \
 		echo "# Compose setup" >> $(DIR_SRCS)/.env; \
 		echo "NETWORK=$(NETWORK)" >> $(DIR_SRCS)/.env; \
