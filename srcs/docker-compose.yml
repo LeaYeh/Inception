@@ -1,5 +1,14 @@
 # docker-compose.yml
 services:
+  base:
+    build:
+      args:
+        - OS=${OS}
+        - OS_VERSION=${OS_VERSION}
+      context: ./requirements/base
+      dockerfile: Dockerfile
+    image: inception/base:${APP_VERSION}
+
   db:
     build:
       args:
@@ -7,6 +16,8 @@ services:
       context: ./requirements/mariadb
       dockerfile: Dockerfile
     image: inception/mariadb:${APP_VERSION}
+    depends_on:
+      - base
     restart: always
     volumes:
       - db-data:/var/lib/mysql
@@ -33,6 +44,7 @@ services:
     image: inception/wordpress:${APP_VERSION}
     restart: always
     depends_on:
+      - base
       - db
     volumes:
       - wp-files:/var/www/html
@@ -59,6 +71,7 @@ services:
     ports:
       - "443:443"
     depends_on:
+      - base
       - wordpress
       - db
     networks:

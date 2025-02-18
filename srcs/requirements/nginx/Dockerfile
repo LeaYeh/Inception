@@ -1,12 +1,8 @@
 # services/nginx/Dockerfile
-# ARG     BASE_IMAGE
-# FROM    ${BASE_IMAGE}
-FROM    alpine:3.19
-ARG     DOMAIN_NAME
+ARG     BASE_IMAGE
+FROM    ${BASE_IMAGE}
 
-RUN     apk update && \
-        apk upgrade && \
-        apk add --no-cache bash curl
+ARG     DOMAIN_NAME
 
 RUN     apk add --no-cache nginx openssl gettext \
         && mkdir -p /run/nginx /etc/nginx/ssl

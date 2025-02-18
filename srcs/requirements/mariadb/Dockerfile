@@ -1,10 +1,8 @@
 # srcs/requirements/mariadb/Dockerfile
-# ARG     BASE_IMAGE
-# FROM    ${BASE_IMAGE}
-FROM    alpine:3.19
-ARG     USER_NAME=mysql
+ARG     BASE_IMAGE
+FROM    ${BASE_IMAGE}
 
-RUN     apk update && apk upgrade && apk add --no-cache bash curl
+ARG     USER_NAME=mysql
 
 RUN     set -x \
             && addgroup -g 82 -S ${USER_NAME} || true \
