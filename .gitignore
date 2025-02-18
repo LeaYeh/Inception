@@ -1,2 +1,3 @@
 srcs/.env
+srcs/.secrets/*
 srcs/docker-compose.override.yml
