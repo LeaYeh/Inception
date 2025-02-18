@@ -1,6 +1,15 @@
 #!/bin/sh
 set -e
 
+echo "🚀 Starting secrets..."
+MYSQL_ROOT_PASSWORD="$(cat ${MYSQL_ROOT_PASSWORD_FILE})"
+MYSQL_ADMIN_PASSWORD="$(cat ${MYSQL_ADMIN_PASSWORD_FILE})"
+WP_ADMIN_PASSWORD="$(cat ${WP_ADMIN_PASSWORD_FILE})"
+
+echo "MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}"
+echo "MYSQL_ADMIN_PASSWORD: ${MYSQL_ADMIN_PASSWORD}"
+echo "WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}"
+
 wait_for_mariadb() {
     echo "Waiting for MariaDB to be ready..."
     for i in $(seq 1 30); do
@@ -19,10 +28,10 @@ init_database() {
 
     echo "Creating database and users..."
     echo "database: ${WP_DATABASE}"
-    echo "admin: ${MYSQL_ADMIN}"
-    echo "admin password: ${MYSQL_ADMIN_PASSWORD}"
-    echo "admin: ${WP_ADMIN}"
-    echo "admin password: ${WP_ADMIN_PASSWORD}"
+    echo "db admin: ${MYSQL_ADMIN}"
+    echo "db admin password: ${MYSQL_ADMIN_PASSWORD}"
+    echo "wp admin: ${WP_ADMIN}"
+    echo "wp admin password: ${WP_ADMIN_PASSWORD}"
     
     mysql -uroot << EOF
 CREATE DATABASE IF NOT EXISTS ${WP_DATABASE};
@@ -58,13 +67,11 @@ main() {
 
     # ls -alR /var/lib/mysql
     if [ ! -d "/var/lib/mysql/mysql" ]; then
-        echo "Install DB..."
+        echo "Installing DB..."
         mysql_install_db --user=mysql --datadir=/var/lib/mysql --skip-test-db 
-        # --auth-root-authentication-method=normal
     else
-        echo "The DB is init!!!!!! NOOOOO"
+        echo "The DB is already installed."
     fi
-    echo "WHERE I AM"
 
     if [ ! -e .init ]; then
         mysqld --user=mysql &
@@ -81,5 +88,3 @@ main() {
 main
 
 exec "$@"
-
-# exec mysqld --user=mysql

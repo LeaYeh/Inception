@@ -1,13 +1,15 @@
 <?php
 $host = getenv('DB_HOST') ?: 'db';
 $user = getenv('WP_ADMIN');
-$pass = getenv('WP_ADMIN_PASSWORD');
+$pass_file = getenv('WP_ADMIN_PASSWORD_FILE');
+$pass = file_exists($pass_file) ? file_get_contents($pass_file) : getenv('WP_ADMIN_PASSWORD');
 $db   = getenv('WP_DATABASE');
 
 echo "Checking database connection...\n";
 echo "Host: $host\n";
 echo "User: $user\n";
 echo "Database: $db\n";
+echo "Password: |$pass|\n";
 
 $conn = @new mysqli($host, $user, $pass, $db);
 

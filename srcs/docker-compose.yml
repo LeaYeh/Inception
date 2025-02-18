@@ -8,6 +8,8 @@ services:
       context: ./requirements/base
       dockerfile: Dockerfile
     image: inception/base:${APP_VERSION}
+    networks:
+      - ${NETWORK}
 
   db:
     build:
@@ -27,13 +29,24 @@ services:
       - source: mariadb_config
         target: /etc/my.cnf
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_ADMIN}", "--password=${MYSQL_ADMIN_PASSWORD}"]
+      test: [
+        "CMD-SHELL",
+        "mysqladmin ping -h localhost -u ${MYSQL_ADMIN} --password=\"$(cat /run/secrets/db_admin_password)\" || exit 1"
+      ]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 30s
+    secrets:
+      - db_root_password
+      - db_admin_password
+      - wp_admin_password
     env_file:
       - .env
+    environment:
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
+      - MYSQL_ADMIN_PASSWORD_FILE=/run/secrets/db_admin_password
+      - WP_ADMIN_PASSWORD_FILE=/run/secrets/wp_admin_password
 
   wordpress:
     build:
@@ -58,6 +71,14 @@ services:
       start_period: 1m
     env_file:
       - .env
+    secrets:
+      - wp_admin_password
+      - wp_user_password
+      - db_admin_password
+    environment:
+      - WP_ADMIN_PASSWORD_FILE=/run/secrets/wp_admin_password
+      - WP_USER_PASSWORD_FILE=/run/secrets/wp_user_password
+      - MYSQL_ADMIN_PASSWORD_FILE=/run/secrets/db_admin_password
 
   nginx:
     build:
@@ -112,3 +133,13 @@ volumes:
       type: none
       device: ${DIR_DATA_DB}
       o: bind
+  
+secrets:
+  db_root_password:
+    file: "${DIR_SECRET}/db_root_password"
+  db_admin_password:
+    file: "${DIR_SECRET}/db_admin_password"
+  wp_admin_password:
+    file: "${DIR_SECRET}/wp_admin_password"
+  wp_user_password:
+    file: "${DIR_SECRET}/wp_user_password"

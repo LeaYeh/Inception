@@ -9,10 +9,11 @@ RESET				:= $(shell tput -Txterm sgr0)
 
 # Configuration
 PROJECT_NAME		= inception
+WORKSPACE			= .
 USER_NAME			= $(shell whoami)
-DIR_SRCS			= ./srcs
+DIR_SRCS			= $(WORKSPACE)/srcs
 DIR_HOME			= $(HOME)
-DIR_SECRET 			= $(DIR_HOME)/.secrets
+DIR_SECRET 			= .secrets
 DIR_DATA			= $(DIR_HOME)/data
 DIR_DATA_WP			= $(DIR_DATA)/wordpress
 DIR_DATA_DB			= $(DIR_DATA)/mariadb
@@ -120,7 +121,9 @@ fclean: clean
 	@rm -f $(DIR_SRCS)/.env || true
 	rm -f $(DIR_SRCS)/docker-compose.override.yml || true
 	rm -rf /Users/leayeh/data || true
-
+	@echo "$(GREEN)Volume and network cleanup completed.$(RESET)"
+	rm -rf $(DIR_SRCS)/$(DIR_SECRET)
+	@echo "$(GREEN)Secrets have been removed.$(RESET)"
 
 .PHONY: logs
 logs:
@@ -140,7 +143,7 @@ logs:
 	fi
 
 .PHONY: init
-init: .setup-hosts .init-env .init-dir .generate-override
+init: .setup-hosts .init-env .init-dir .init-secrets .generate-override
 	@echo "$(GREEN)Initial success!$(RESET)"
 
 .PHONY: .init-dir
@@ -171,20 +174,49 @@ init: .setup-hosts .init-env .init-dir .generate-override
 		echo "" >> $(DIR_SRCS)/.env; \
 		echo "# DB setup" >> $(DIR_SRCS)/.env; \
 		echo "DB_HOST=db" >> $(DIR_SRCS)/.env; \
-		echo "MYSQL_ROOT_PASSWORD=$$(openssl rand -base64 12 | tr -d '=+/')" >> $(DIR_SRCS)/.env; \
 		echo "MYSQL_ADMIN=$$USER_NAME" >> $(DIR_SRCS)/.env; \
-		echo "MYSQL_ADMIN_PASSWORD=$$(openssl rand -base64 12 | tr -d '=+/')" >> $(DIR_SRCS)/.env; \
 		echo "WP_DATABASE=wordpress" >> $(DIR_SRCS)/.env; \
 		echo "WP_ADMIN=wordpress" >> $(DIR_SRCS)/.env; \
-		echo "WP_ADMIN_PASSWORD=$$(openssl rand -base64 12 | tr -d '=+/')" >> $(DIR_SRCS)/.env; \
 		echo "WP_USER=bob" >> $(DIR_SRCS)/.env; \
-		echo "WP_USER_PASSWORD=$$(openssl rand -base64 12 | tr -d '=+/')" >> $(DIR_SRCS)/.env; \
 		echo "" >> $(DIR_SRCS)/.env; \
 		echo "# Compose setup" >> $(DIR_SRCS)/.env; \
 		echo "NETWORK=$(NETWORK)" >> $(DIR_SRCS)/.env; \
 		echo "$(GREEN).env file has been created.$(RESET)"; \
 	else \
 		echo "$(YELLOW).env already exists.$(RESET)"; \
+	fi
+
+.PHONY: .init-secrets
+.init-secrets:
+	@echo "$(YELLOW)Create secret directory...$(RESET)"
+	@mkdir -p $(DIR_SRCS)/$(DIR_SECRET)
+	@if [ ! -f $(DIR_SRCS)/$(DIR_SECRET)/db_root_password ]; then \
+		echo "$(BLUE)Generating random DB root password (secret)...$(RESET)"; \
+		openssl rand -base64 12 | tr -d '=+/\n' > $(DIR_SRCS)/$(DIR_SECRET)/db_root_password; \
+		chmod 600 $(DIR_SRCS)/$(DIR_SECRET)/db_root_password; \
+	else \
+		echo "$(YELLOW)Secret file already exists: $(DIR_SRCS)/$(DIR_SECRET)/db_root_password$(RESET)"; \
+	fi
+	@if [ ! -f $(DIR_SRCS)/$(DIR_SECRET)/db_admin_password ]; then \
+		echo "$(BLUE)Generating random DB admin password (secret)...$(RESET)"; \
+		openssl rand -base64 12 | tr -d '=+/\n' > $(DIR_SRCS)/$(DIR_SECRET)/db_admin_password; \
+		chmod 600 $(DIR_SRCS)/$(DIR_SECRET)/db_admin_password; \
+	else \
+		echo "$(YELLOW)Secret file already exists: $(DIR_SRCS)/$(DIR_SECRET)/db_admin_password$(RESET)"; \
+	fi
+	@if [ ! -f $(DIR_SRCS)/$(DIR_SECRET)/wp_admin_password ]; then \
+		echo "$(BLUE)Generating random WordPress admin password (secret)...$(RESET)"; \
+		openssl rand -base64 12 | tr -d '=+/\n' > $(DIR_SRCS)/$(DIR_SECRET)/wp_admin_password; \
+		chmod 600 $(DIR_SRCS)/$(DIR_SECRET)/wp_admin_password; \
+	else \
+		echo "$(YELLOW)Secret file already exists: $(DIR_SRCS)/$(DIR_SECRET)/wp_admin_password$(RESET)"; \
+	fi
+	@if [ ! -f $(DIR_SRCS)/$(DIR_SECRET)/wp_user_password ]; then \
+		echo "$(BLUE)Generating random WordPress user password (secret)...$(RESET)"; \
+		openssl rand -base64 12 | tr -d '=+/\n' > $(DIR_SRCS)/$(DIR_SECRET)/wp_user_password; \
+		chmod 600 $(DIR_SRCS)/$(DIR_SECRET)/wp_user_password; \
+	else \
+		echo "$(YELLOW)Secret file already exists: $(DIR_SRCS)/$(DIR_SECRET)/wp_user_password$(RESET)"; \
 	fi
 
 .PHONY: .generate-override

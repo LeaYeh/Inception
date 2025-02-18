@@ -1,6 +1,15 @@
 #!/bin/sh
 set -e  # exit immediately if a command exits with a non-zero status
 
+echo "🚀 Starting secrets..."
+MYSQL_ADMIN_PASSWORD="$(cat ${MYSQL_ADMIN_PASSWORD_FILE})"
+WP_ADMIN_PASSWORD="$(cat ${WP_ADMIN_PASSWORD_FILE})"
+WP_USER_PASSWORD="$(cat ${WP_USER_PASSWORD_FILE})"
+
+echo "MYSQL_ADMIN_PASSWORD: ${MYSQL_ADMIN_PASSWORD}"
+echo "WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}"
+echo "WP_USER_PASSWORD: ${WP_USER_PASSWORD}"
+
 ### 🔹 Wait for db getting ready
 MAX_RETRIES=5
 RETRY_COUNT=0
