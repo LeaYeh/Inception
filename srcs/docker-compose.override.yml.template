@@ -16,3 +16,19 @@ volumes:
       type: none
       device: ${DIR_DATA_DB}
       o: bind
+
+secrets:
+  db_root_password:
+    file: "${DIR_SECRET}/db_root_password"
+  db_admin_password:
+    file: "${DIR_SECRET}/db_admin_password"
+  wp_admin_password:
+    file: "${DIR_SECRET}/wp_admin_password"
+  wp_user_password:
+    file: "${DIR_SECRET}/wp_user_password"
+
+configs:
+  nginx_config_template:
+    file: ./requirements/nginx/conf/nginx.conf.template
+  mariadb_config:
+    file: ./requirements/mariadb/conf/my.cnf
