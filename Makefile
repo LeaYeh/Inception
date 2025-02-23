@@ -11,6 +11,8 @@ RESET				:= $(shell tput -Txterm sgr0)
 PROJECT_NAME		= inception
 WORKSPACE			= .
 USER_NAME			= $(shell whoami)
+USER_UID			= $(shell id -u)
+USER_GID			= $(shell id -g)
 DIR_SRCS			= $(WORKSPACE)/srcs
 DIR_HOME			= $(HOME)
 DIR_SECRET 			= .secrets
@@ -166,6 +168,8 @@ init: .setup-hosts .init-env .init-dir .init-secrets .generate-override
 		echo "OS_VERSION=$(OS_VERSION)" >> $(DIR_SRCS)/.env; \
 		echo "APP_VERSION=$(APP_VERSION)" >> $(DIR_SRCS)/.env; \
 		echo "DOMAIN_NAME=$$USER_NAME.42.fr" >> $(DIR_SRCS)/.env; \
+		echo "USER_UID=$(USER_UID)" >> $(DIR_SRCS)/.env; \
+		echo "USER_GID=$(USER_GID)" >> $(DIR_SRCS)/.env; \
 		echo "" >> $(DIR_SRCS)/.env; \
 		echo "# Directory setup" >> $(DIR_SRCS)/.env; \
 		echo "DIR_SECRET=$(DIR_SECRET)" >> $(DIR_SRCS)/.env; \

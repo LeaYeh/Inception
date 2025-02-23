@@ -3,10 +3,12 @@ ARG     BASE_IMAGE
 FROM    ${BASE_IMAGE}
 
 ARG     USER_NAME=www-data
+ARG     USER_UID
+ARG     USER_GID
 
-RUN     set -x \
-            && addgroup -g 82 -S ${USER_NAME} || true \
-            && adduser -u 82 -D -S -G ${USER_NAME} ${USER_NAME} || true
+RUN     set -xeu \
+            && addgroup -g ${USER_GID} -S ${USER_NAME} || true \
+            && adduser -u ${USER_UID} -D -S -G ${USER_NAME} ${USER_NAME} || true
 
 RUN         apk add --no-cache \
         php \

@@ -13,7 +13,8 @@ openssl req -x509 -nodes \
     -subj "/C=FR/ST=IDF/L=Paris/O=42/OU=42/CN=${DOMAIN_NAME}" \
     -addext "subjectAltName=DNS:${DOMAIN_NAME}"
 
-chmod 600 /etc/nginx/ssl/privatekey.pem
+chown ${USER_NAME}:${USER_NAME} /etc/nginx/ssl/privatekey.pem
+chmod 640 /etc/nginx/ssl/privatekey.pem
 chmod 644 /etc/nginx/ssl/certificate.pem
 
 echo "SSL certificate generated successfully!"

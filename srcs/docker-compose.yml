@@ -15,6 +15,8 @@ services:
     build:
       args:
         - BASE_IMAGE=inception/base:${APP_VERSION}
+        - USER_UID=${USER_UID}
+        - USER_GID=${USER_GID}
       context: ./requirements/mariadb
       dockerfile: Dockerfile
     image: inception/mariadb:${APP_VERSION}
@@ -52,6 +54,8 @@ services:
     build:
       args:
         - BASE_IMAGE=inception/base:${APP_VERSION}
+        - USER_UID=${USER_UID}
+        - USER_GID=${USER_GID}
       context: ./requirements/wordpress
       dockerfile: Dockerfile
     image: inception/wordpress:${APP_VERSION}
@@ -85,6 +89,8 @@ services:
       args:
         - BASE_IMAGE=inception/base:${APP_VERSION}
         - DOMAIN_NAME="${DOMAIN_NAME}"
+        - USER_UID=${USER_UID}
+        - USER_GID=${USER_GID}
       context: ./requirements/nginx
       dockerfile: Dockerfile
     image: inception/nginx:${APP_VERSION}
