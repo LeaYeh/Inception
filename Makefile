@@ -68,7 +68,7 @@ down:
 build: init .build-base
 	@echo "$(BLUE)Checking other images...$(RESET)"
 	@for service in $(SERVICES); do \
-		if docker image inspect inception/$$service:$(APP_VERSION) > /dev/null 2>&1; then \
+		if docker image inspect inception-$$service:$(APP_VERSION) > /dev/null 2>&1; then \
 			echo "$(GREEN)Image for $$service already exists.$(RESET)"; \
 		else \
 			echo "$(BLUE)Building image for $$service without cache...$(RESET)"; \
@@ -90,7 +90,7 @@ re-service: .build-base
 	@$(DC) stop $(SERVICE)
 	@$(DC) rm -f $(SERVICE)
 	@echo "$(YELLOW)Removing $(SERVICE) image...$(RESET)"
-	@docker rmi inception/$(SERVICE):$(APP_VERSION) || true
+	@docker rmi inception-$(SERVICE):$(APP_VERSION) || true
 	@DOCKER_BUILDKIT=0 $(DC) build --no-cache $(SERVICE)
 	@$(DC) up -d $(SERVICE)
 	@echo "$(GREEN)Service $(SERVICE) has been rebuilt and restarted.$(RESET)"
@@ -107,8 +107,8 @@ re-service: .build-base
 clean: down
 	@echo "$(RED)Removing all project images...$(RESET)"
 	@for s in $(SERVICES); do \
-		echo "Removing inception/$$s:$(APP_VERSION)"; \
-		docker rmi inception/$$s:$(APP_VERSION) || true; \
+		echo "Removing inception-$$s:$(APP_VERSION)"; \
+		docker rmi inception-$$s:$(APP_VERSION) || true; \
 	done
 	@echo "$(YELLOW)Removing dangling images...$(RESET)"
 	@docker image prune -f
@@ -136,12 +136,12 @@ logs:
 # .build-base: .generate-override
 .build-base:
 	@echo "$(BLUE)Checking base image...$(RESET)"
-	@if docker image inspect inception/base:$(APP_VERSION) > /dev/null 2>&1; then \
-		echo "$(GREEN)Base image already exists: inception/base:$(APP_VERSION)$(RESET)"; \
+	@if docker image inspect inception-base:$(APP_VERSION) > /dev/null 2>&1; then \
+		echo "$(GREEN)Base image already exists: inception-base:$(APP_VERSION)$(RESET)"; \
 	else \
 		echo "$(BLUE)Building base image...$(RESET)"; \
 		$(DC) build base --no-cache; \
-		echo "$(GREEN)Base image has been built: inception/base:$(APP_VERSION)$(RESET)"; \
+		echo "$(GREEN)Base image has been built: inception-base:$(APP_VERSION)$(RESET)"; \
 	fi
 
 .PHONY: init
@@ -164,6 +164,7 @@ init: .setup-hosts .init-env .init-dir .init-secrets .generate-override
 		echo "$(YELLOW)Creating .env file..."; \
 		echo "# $(DIR_SRCS)/.env" > $(DIR_SRCS)/.env; \
 		echo "# Basic setup" >> $(DIR_SRCS)/.env; \
+		echo "PROJECT_NAME=$(PROJECT_NAME)" >> $(DIR_SRCS)/.env; \
 		echo "OS=$(OS)" >> $(DIR_SRCS)/.env; \
 		echo "OS_VERSION=$(OS_VERSION)" >> $(DIR_SRCS)/.env; \
 		echo "APP_VERSION=$(APP_VERSION)" >> $(DIR_SRCS)/.env; \

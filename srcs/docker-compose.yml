@@ -7,19 +7,21 @@ services:
         - OS_VERSION=${OS_VERSION}
       context: ./requirements/base
       dockerfile: Dockerfile
-    image: inception/base:${APP_VERSION}
+    image: ${PROJECT_NAME}-base:${APP_VERSION}
+    container_name: ${PROJECT_NAME}-base
     networks:
       - ${NETWORK}
 
   db:
     build:
       args:
-        - BASE_IMAGE=inception/base:${APP_VERSION}
+        - BASE_IMAGE=${PROJECT_NAME}-base:${APP_VERSION}
         - USER_UID=${USER_UID}
         - USER_GID=${USER_GID}
       context: ./requirements/mariadb
       dockerfile: Dockerfile
-    image: inception/mariadb:${APP_VERSION}
+    image: ${PROJECT_NAME}-mariadb:${APP_VERSION}
+    container_name: ${PROJECT_NAME}-mariadb
     depends_on:
       - base
     restart: always
@@ -53,12 +55,13 @@ services:
   wordpress:
     build:
       args:
-        - BASE_IMAGE=inception/base:${APP_VERSION}
+        - BASE_IMAGE=${PROJECT_NAME}-base:${APP_VERSION}
         - USER_UID=${USER_UID}
         - USER_GID=${USER_GID}
       context: ./requirements/wordpress
       dockerfile: Dockerfile
-    image: inception/wordpress:${APP_VERSION}
+    image: ${PROJECT_NAME}-wordpress:${APP_VERSION}
+    container_name: ${PROJECT_NAME}-wordpress
     restart: always
     depends_on:
       - base
@@ -87,13 +90,14 @@ services:
   nginx:
     build:
       args:
-        - BASE_IMAGE=inception/base:${APP_VERSION}
+        - BASE_IMAGE=${PROJECT_NAME}-base:${APP_VERSION}
         - DOMAIN_NAME="${DOMAIN_NAME}"
         - USER_UID=${USER_UID}
         - USER_GID=${USER_GID}
       context: ./requirements/nginx
       dockerfile: Dockerfile
-    image: inception/nginx:${APP_VERSION}
+    image: ${PROJECT_NAME}-nginx:${APP_VERSION}
+    container_name: ${PROJECT_NAME}-nginx
     restart: always
     ports:
       - "443:443"
