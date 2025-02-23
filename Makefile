@@ -7,6 +7,13 @@ CYAN				:= $(shell tput -Txterm setaf 6)
 WHITE				:= $(shell tput -Txterm setaf 7)
 RESET				:= $(shell tput -Txterm sgr0)
 
+OS_TYPE := $(shell uname)
+ifeq ($(OS_TYPE),Darwin)
+  DOCKER_BUILDKIT := 0
+else
+  DOCKER_BUILDKIT := 1
+endif
+
 # Configuration
 PROJECT_NAME		= inception
 WORKSPACE			= .
@@ -20,7 +27,7 @@ DIR_DATA			= $(DIR_HOME)/data
 DIR_DATA_WP			= $(DIR_DATA)/wordpress
 DIR_DATA_DB			= $(DIR_DATA)/mariadb
 # DC 					= DOCKER_BUILDKIT=0 docker compose -f $(DIR_SRCS)/docker-compose.yml -f $(DIR_SRCS)/docker-compose.override.yml
-DC 					= DOCKER_BUILDKIT=0 docker compose -p $(PROJECT_NAME) -f $(DIR_SRCS)/docker-compose.yml -f $(DIR_SRCS)/docker-compose.override.yml --env-file $(DIR_SRCS)/.env
+DC 					= DOCKER_BUILDKIT=${DOCKER_BUILDKIT} docker compose -p $(PROJECT_NAME) -f $(DIR_SRCS)/docker-compose.yml -f $(DIR_SRCS)/docker-compose.override.yml --env-file $(DIR_SRCS)/.env
 APP_VERSION 		= 0.0.1
 OS 					= alpine
 OS_VERSION 			= 3.19
