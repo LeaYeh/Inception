@@ -55,6 +55,12 @@ RUN     chown ${USER_NAME}:${USER_NAME} /var/www/html/test_db_connection.php
 RUN     chmod 755 /var/www/html/test_db_connection.php
 
 COPY    conf/php-fpm.conf /etc/php82/php-fpm.conf
+RUN     sed -i 's/^clear_env\s*=.*/clear_env = no/' /etc/php82/php-fpm.d/www.conf \
+        && echo "env[DOMAIN_NAME] = \$DOMAIN_NAME" >> /etc/php82/php-fpm.d/www.conf \
+        && echo "env[DB_HOST] = \$DB_HOST" >> /etc/php82/php-fpm.d/www.conf \
+        && echo "env[WP_ADMIN] = \$WP_ADMIN" >> /etc/php82/php-fpm.d/www.conf \
+        && echo "env[WP_DATABASE] = \$WP_DATABASE" >> /etc/php82/php-fpm.d/www.conf \
+        && echo "env[WP_USER] = \$WP_USER" >> /etc/php82/php-fpm.d/www.conf
 
 WORKDIR /var/www/html
 
