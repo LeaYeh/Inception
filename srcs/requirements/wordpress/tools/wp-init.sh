@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e  # exit immediately if a command exits with a non-zero status
 
+echo "🚀 Config www.conf with env"
+envsubst < /etc/php82/php-fpm.d/www.conf.template > /etc/php82/php-fpm.d/www.conf
+
 echo "🚀 Starting secrets..."
 MYSQL_ADMIN_PASSWORD="$(cat ${MYSQL_ADMIN_PASSWORD_FILE})"
 WP_ADMIN_PASSWORD="$(cat ${WP_ADMIN_PASSWORD_FILE})"

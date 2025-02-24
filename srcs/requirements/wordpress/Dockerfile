@@ -6,6 +6,8 @@ ARG     USER_NAME=www-data
 ARG     USER_UID
 ARG     USER_GID
 
+RUN     apk add --no-cache gettext
+
 RUN     set -xeu \
             && addgroup -g ${USER_GID} -S ${USER_NAME} || true \
             && adduser -u ${USER_UID} -D -S -G ${USER_NAME} ${USER_NAME} || true
@@ -51,16 +53,12 @@ COPY    tools/wp-init.sh /usr/local/bin/wp-init.sh
 RUN     chmod 755 /usr/local/bin/wp-init.sh
 
 COPY    tools/test_db_connection.php /var/www/html/test_db_connection.php
-RUN     chown ${USER_NAME}:${USER_NAME} /var/www/html/test_db_connection.php
-RUN     chmod 755 /var/www/html/test_db_connection.php
+RUN     chown ${USER_NAME}:${USER_NAME} /var/www/html/test_db_connection.php \
+        && chmod 755 /var/www/html/test_db_connection.php
 
 COPY    conf/php-fpm.conf /etc/php82/php-fpm.conf
-RUN     sed -i 's/^clear_env\s*=.*/clear_env = no/' /etc/php82/php-fpm.d/www.conf \
-        && echo "env[DOMAIN_NAME] = \$DOMAIN_NAME" >> /etc/php82/php-fpm.d/www.conf \
-        && echo "env[DB_HOST] = \$DB_HOST" >> /etc/php82/php-fpm.d/www.conf \
-        && echo "env[WP_ADMIN] = \$WP_ADMIN" >> /etc/php82/php-fpm.d/www.conf \
-        && echo "env[WP_DATABASE] = \$WP_DATABASE" >> /etc/php82/php-fpm.d/www.conf \
-        && echo "env[WP_USER] = \$WP_USER" >> /etc/php82/php-fpm.d/www.conf
+RUN     chown -R ${USER_NAME}:${USER_NAME} /etc/php82/php-fpm.d
+COPY    conf/www.conf.template /etc/php82/php-fpm.d/www.conf.template
 
 WORKDIR /var/www/html
 

@@ -1,0 +1,6 @@
+clear_env = no
+env[DOMAIN_NAME] = ${DOMAIN_NAME}
+env[DB_HOST] = ${DB_HOST}
+env[WP_ADMIN] = ${WP_ADMIN}
+env[WP_DATABASE] = ${WP_DATABASE}
+env[WP_USER] = ${WP_USER}
