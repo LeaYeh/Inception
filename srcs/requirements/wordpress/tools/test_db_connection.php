@@ -1,9 +1,9 @@
 <?php
 $host = getenv('DB_HOST') ?: 'db';
-$user = getenv('WP_ADMIN');
-$pass_file = getenv('WP_ADMIN_PASSWORD_FILE');
+$user = getenv('WP_ADMIN') ?: 'wordpress';
+$pass_file = getenv('WP_ADMIN_PASSWORD_FILE') ?: '/run/secrets/wp_admin_password';
 $pass = file_exists($pass_file) ? file_get_contents($pass_file) : getenv('WP_ADMIN_PASSWORD');
-$db   = getenv('WP_DATABASE');
+$db   = getenv('WP_DATABASE') ?: 'wordpress';
 
 echo "Checking database connection...\n";
 echo "Host: $host\n";
