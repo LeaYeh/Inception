@@ -14,7 +14,7 @@ wait_for_mariadb() {
     echo "Waiting for MariaDB to be ready..."
     for i in $(seq 1 30); do
         if mysqladmin ping -h"localhost" -u"root" --silent; then
-            echo "MariaDB is ready!"
+            echo " ✅ MariaDB is ready!"
             return 0
         fi
         echo "Attempt $i: MariaDB is not ready yet... waiting"
@@ -26,7 +26,7 @@ wait_for_mariadb() {
 
 init_database() {
 
-    echo "Creating database and users..."
+    echo "🚀 Creating database and users..."
     echo "database: ${WP_DATABASE}"
     echo "db admin: ${MYSQL_ADMIN}"
     echo "db admin password: ${MYSQL_ADMIN_PASSWORD}"
@@ -44,31 +44,35 @@ GRANT ALL PRIVILEGES ON *.* TO '${WP_ADMIN}'@'%' WITH GRANT OPTION;
 
 FLUSH PRIVILEGES;
 EOF
+    echo "✅ Database and users created successfully!"
 
-#     echo "Changing root password..."
-#     mysql -uroot << EOF
-# ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
-# EOF
-
+    echo "🚀 Changing root password..."
+    mysql -uroot << EOF
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
+EOF
+    echo "✅ Root password changed successfully!"
     touch .init
 }
 
 verify_users() {
-    echo "Verifying users..."
-    mysql -u root << EOF
+    echo "🚀 Verifying users..."
+    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" << EOF
 SELECT User, Host FROM mysql.user WHERE User IN ('${WP_ADMIN}', '${MYSQL_ADMIN}');
 SHOW GRANTS FOR '${WP_ADMIN}'@'%';
 SHOW GRANTS FOR '${MYSQL_ADMIN}'@'%';
 EOF
+    echo "✅ Users verified successfully!"
 }
 
 main() {
     chown -R mysql:mysql /var/lib/mysql
 
-    # ls -alR /var/lib/mysql
     if [ ! -d "/var/lib/mysql/mysql" ]; then
         echo "Installing DB..."
-        mysql_install_db --user=mysql --datadir=/var/lib/mysql --skip-test-db 
+        mysql_install_db --user=mysql \
+            --datadir=/var/lib/mysql \
+            --skip-test-db \
+            --auth-root-authentication-method=normal
     else
         echo "The DB is already installed."
     fi
@@ -78,7 +82,7 @@ main() {
         wait_for_mariadb
         init_database
         verify_users
-        mysqladmin -uroot shutdown
+        mysqladmin -uroot -p"${MYSQL_ROOT_PASSWORD}" shutdown
         echo "Database initialization completed."
     else
         echo "Database already initialized."

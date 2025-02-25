@@ -5,8 +5,9 @@ FROM    ${BASE_IMAGE}
 ARG     USER_NAME=mysql
 
 RUN     set -x \
-            && addgroup -g 82 -S ${USER_NAME} || true \
-            && adduser -u 82 -D -S -G ${USER_NAME} ${USER_NAME} || true
+            && addgroup -S ${USER_NAME} \
+            && adduser -D -S -G ${USER_NAME} ${USER_NAME} \
+            && getent group ${USER_NAME}
 
 RUN     apk add --no-cache mariadb mariadb-client
 
@@ -21,7 +22,7 @@ RUN     chmod 755 /var/lib/mysql /var/run/mysqld
 
 WORKDIR /var/lib/mysql
 
-# USER    ${USER_NAME}
+USER    ${USER_NAME}
 
 ENTRYPOINT [ "sh", "/local/bin/init-db.sh" ]
 
