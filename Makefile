@@ -129,7 +129,7 @@ fclean: clean
 	@docker network rm $(PROJECT_NAME)_$(NETWORK) || true
 	@rm -f $(DIR_SRCS)/.env || true
 	rm -f $(DIR_SRCS)/docker-compose.override.yml || true
-	rm -rf /Users/leayeh/data || true
+	sudo rm -rf $(DIR_DATA) || true
 	@echo "$(GREEN)Volume and network cleanup completed.$(RESET)"
 	rm -rf $(DIR_SRCS)/$(DIR_SECRET)
 	@echo "$(GREEN)Secrets have been removed.$(RESET)"
@@ -205,28 +205,28 @@ init: .setup-hosts .init-env .init-dir .init-secrets .generate-override
 	@if [ ! -f $(DIR_SRCS)/$(DIR_SECRET)/db_root_password ]; then \
 		echo "$(BLUE)Generating random DB root password (secret)...$(RESET)"; \
 		openssl rand -base64 12 | tr -d '=+/\n' > $(DIR_SRCS)/$(DIR_SECRET)/db_root_password; \
-		chmod 600 $(DIR_SRCS)/$(DIR_SECRET)/db_root_password; \
+		chmod 644 $(DIR_SRCS)/$(DIR_SECRET)/db_root_password; \
 	else \
 		echo "$(YELLOW)Secret file already exists: $(DIR_SRCS)/$(DIR_SECRET)/db_root_password$(RESET)"; \
 	fi
 	@if [ ! -f $(DIR_SRCS)/$(DIR_SECRET)/db_admin_password ]; then \
 		echo "$(BLUE)Generating random DB admin password (secret)...$(RESET)"; \
 		openssl rand -base64 12 | tr -d '=+/\n' > $(DIR_SRCS)/$(DIR_SECRET)/db_admin_password; \
-		chmod 600 $(DIR_SRCS)/$(DIR_SECRET)/db_admin_password; \
+		chmod 644 $(DIR_SRCS)/$(DIR_SECRET)/db_admin_password; \
 	else \
 		echo "$(YELLOW)Secret file already exists: $(DIR_SRCS)/$(DIR_SECRET)/db_admin_password$(RESET)"; \
 	fi
 	@if [ ! -f $(DIR_SRCS)/$(DIR_SECRET)/wp_admin_password ]; then \
 		echo "$(BLUE)Generating random WordPress admin password (secret)...$(RESET)"; \
 		openssl rand -base64 12 | tr -d '=+/\n' > $(DIR_SRCS)/$(DIR_SECRET)/wp_admin_password; \
-		chmod 600 $(DIR_SRCS)/$(DIR_SECRET)/wp_admin_password; \
+		chmod 644 $(DIR_SRCS)/$(DIR_SECRET)/wp_admin_password; \
 	else \
 		echo "$(YELLOW)Secret file already exists: $(DIR_SRCS)/$(DIR_SECRET)/wp_admin_password$(RESET)"; \
 	fi
 	@if [ ! -f $(DIR_SRCS)/$(DIR_SECRET)/wp_user_password ]; then \
 		echo "$(BLUE)Generating random WordPress user password (secret)...$(RESET)"; \
 		openssl rand -base64 12 | tr -d '=+/\n' > $(DIR_SRCS)/$(DIR_SECRET)/wp_user_password; \
-		chmod 600 $(DIR_SRCS)/$(DIR_SECRET)/wp_user_password; \
+		chmod 644 $(DIR_SRCS)/$(DIR_SECRET)/wp_user_password; \
 	else \
 		echo "$(YELLOW)Secret file already exists: $(DIR_SRCS)/$(DIR_SECRET)/wp_user_password$(RESET)"; \
 	fi

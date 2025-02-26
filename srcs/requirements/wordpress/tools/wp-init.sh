@@ -9,28 +9,30 @@ MYSQL_ADMIN_PASSWORD="$(cat ${MYSQL_ADMIN_PASSWORD_FILE})"
 WP_ADMIN_PASSWORD="$(cat ${WP_ADMIN_PASSWORD_FILE})"
 WP_USER_PASSWORD="$(cat ${WP_USER_PASSWORD_FILE})"
 
-echo "MYSQL_ADMIN_PASSWORD: ${MYSQL_ADMIN_PASSWORD}"
-echo "WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}"
-echo "WP_USER_PASSWORD: ${WP_USER_PASSWORD}"
+echo "MYSQL_ADMIN_PASSWORD: |${MYSQL_ADMIN_PASSWORD}|"
+echo "WP_ADMIN_PASSWORD: |${WP_ADMIN_PASSWORD}|"
+echo "WP_USER_PASSWORD: |${WP_USER_PASSWORD}|"
 
 ### 🔹 Wait for db getting ready
-MAX_RETRIES=5
-RETRY_COUNT=0
 echo "⏳ Waiting for database to be ready..."
-while [ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]; do
-    if php test_db_connection.php; then
-        echo "✅ Database is ready!"
-        break
-    fi
-    RETRY_COUNT=$((RETRY_COUNT+1))
-    echo "⚠️ Database connection failed. Retrying ($RETRY_COUNT/$MAX_RETRIES)..."
-    sleep 5
-done
+sleep 10
+# MAX_RETRIES=5
+# RETRY_COUNT=0
+# echo "⏳ Waiting for database to be ready..."
+# while [ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]; do
+#     if php test_db_connection.php; then
+#         echo "✅ Database is ready!"
+#         break
+#     fi
+#     RETRY_COUNT=$((RETRY_COUNT+1))
+#     echo "⚠️ Database connection failed. Retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+#     sleep 5
+# done
 
-if [ "$RETRY_COUNT" -eq "$MAX_RETRIES" ]; then
-    echo "❌ Database connection failed after $MAX_RETRIES attempts. Exiting..."
-    exit 1
-fi
+# if [ "$RETRY_COUNT" -eq "$MAX_RETRIES" ]; then
+#     echo "❌ Database connection failed after $MAX_RETRIES attempts. Exiting..."
+#     exit 1
+# fi
 
 ### 🔹 Check wordpress exist
 echo "🔍 Checking if WordPress files are present..."
